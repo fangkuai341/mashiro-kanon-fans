@@ -1,7 +1,4 @@
 const pool = require('../config/db');
-
-const pool = require('../config/db');
-
 // --- 1. 动态 News (CRUD) ---
 exports.getNews = async (req, res) => {
     try {
