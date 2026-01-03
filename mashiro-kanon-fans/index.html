@@ -1,12 +1,29 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>mashiro-kanon-fans</title>
+    <title>Kanon's Garden | 真白花音非官方粉丝站</title>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=M+PLUS+Rounded+1c:wght@400;700&display=swap');
+      body {
+        font-family: 'M PLUS Rounded 1c', 'Noto Sans SC', sans-serif;
+      }
+      .chart-container {
+        position: relative;
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto;
+        height: 300px;
+        max-height: 400px;
+      }
+      @media (min-width: 768px) {
+        .chart-container { height: 350px; }
+      }
+    </style>
   </head>
-  <body>
+  <body class="bg-gray-50 text-gray-700">
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
