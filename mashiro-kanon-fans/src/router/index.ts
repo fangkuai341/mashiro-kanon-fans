@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
 // 确保这些组件已经在 src/views/ 下创建好
+import { RouterName, TabName } from '../type/router.data';
 import CommunityView from '../views/CommunityView.vue';
 import DashboardView from '../views/DashboardView.vue';
 import LiveView from '../views/LiveView.vue';
@@ -10,33 +11,52 @@ import ShopView from '../views/ShopView.vue';
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
-    name: 'Dashboard',
-    component: DashboardView
+    name: RouterName.Dashboard,
+    component: DashboardView,
+    meta:{
+      tab:TabName.Dashboard
+    }
+
   },
   {
     path: '/profile',
-    name: 'Profile',
-    component: ProfileView
+    name: RouterName.Profile,
+    component: ProfileView,
+    meta:{
+      tab:TabName.Profile
+    }
   },
   {
     path: '/music',
-    name: 'Music',
-    component: MusicView
+    name: RouterName.Music,
+    component: MusicView,
+    meta:{
+      tab:TabName.Music
+    }
   },
   {
     path: '/live',
-    name: 'Live',
-    component: LiveView
+    name: RouterName.Live,
+    component: LiveView,
+    meta:{
+      tab:TabName.Live,
+    }
   },
   {
     path: '/community',
-    name: 'Community',
-    component: CommunityView
+    name: RouterName.Community,
+    component: CommunityView,
+    meta:{
+      tab:TabName.Community,
+    }
   },
   {
     path: '/shop',
-    name: 'Shop',
-    component: ShopView
+    name: RouterName.Shop,
+    component: ShopView,
+    meta:{
+      tab:TabName.Shop
+    }
   }
 ];
 

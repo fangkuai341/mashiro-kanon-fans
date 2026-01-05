@@ -1,14 +1,8 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue';
+import { reactive } from 'vue';
 import Footer from './components/Footer.vue';
 import NavBar from './components/NavBar.vue';
 import type { Database } from './types';
-import CommunityView from './views/CommunityView.vue';
-import DashboardView from './views/DashboardView.vue';
-import LiveView from './views/LiveView.vue';
-import MusicView from './views/MusicView.vue';
-import ProfileView from './views/ProfileView.vue';
-import ShopView from './views/ShopView.vue';
 
 // --- Data Store (保持在顶层，或移至 Pinia) ---
 const db = reactive<Database>({
@@ -53,18 +47,18 @@ const db = reactive<Database>({
   ]
 });
 
-const activeTab = ref('dashboard');
 const switchTab = (tab: string) => activeTab.value = tab;
 
 </script>
 
 <template>
   <div class="min-h-screen flex flex-col">
-    <NavBar :active-tab="activeTab" @switch="switchTab" />
+    <NavBar  @switch="switchTab" />
 
     <main class="max-w-6xl mx-auto px-4 py-6 flex-grow w-full">
       <!-- 使用 v-if 确保组件卸载和挂载，触发生命周期以重新渲染 Canvas 图表 -->
-      <DashboardView v-if="activeTab === 'dashboard'"
+      <router-view />
+      <!-- <DashboardView v-if="activeTab === 'dashboard'"
                      :news="db.news"
                      :quotes="db.quotes"
                      @navigate="switchTab" />
@@ -80,7 +74,7 @@ const switchTab = (tab: string) => activeTab.value = tab;
 
       <CommunityView v-if="activeTab === 'community'" />
 
-      <ShopView v-if="activeTab === 'shop'" />
+      <ShopView v-if="activeTab === 'shop'" /> -->
     </main>
 
     <Footer />
