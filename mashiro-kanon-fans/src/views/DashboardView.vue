@@ -1,18 +1,19 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
+import { getNewApi } from '../api';
 import type { NewsItem } from '../types';
-
 const props = defineProps<{
   news: NewsItem[];
   quotes: string[];
 }>();
 
 const emit = defineEmits(['navigate']);
-
+const news=ref([])
 const currentQuote = ref('');
 
-onMounted(() => {
-  currentQuote.value = `"${props.quotes[Math.floor(Math.random() * props.quotes.length)]}"`;
+onMounted(async() => {
+  news.value=await getNewApi()
+  //currentQuote.value = `"${props.quotes[Math.floor(Math.random() * props.quotes.length)]}"`;
 });
 </script>
 
