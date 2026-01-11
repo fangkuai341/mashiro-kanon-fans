@@ -1,39 +1,39 @@
 <script setup lang="ts">
-import Chart from 'chart.js/auto';
-import { onMounted, onUnmounted, ref } from 'vue';
+//import Chart from 'chart.js/auto';
+import { onMounted } from 'vue';
 import type { ScheduleItem } from '../types';
 
 defineProps<{
   schedule: ScheduleItem[];
 }>();
 
-const chartCanvas = ref<HTMLCanvasElement | null>(null);
-let chartInstance: Chart | null = null;
+// const chartCanvas = ref<HTMLCanvasElement | null>(null);
+// let chartInstance: Chart | null = null;
 
 onMounted(() => {
-  if (chartCanvas.value) {
-    chartInstance = new Chart(chartCanvas.value, {
-      type: 'doughnut',
-      data: {
-        labels: ['歌回 (Singing)', '游戏 (Game)', '杂谈 (Chat)'],
-        datasets: [{
-          data: [45, 30, 25], // Mock data
-          backgroundColor: ['#F472B6', '#60A5FA', '#FBBF24'],
-          borderWidth: 0
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { position: 'bottom' } }
-      }
-    });
-  }
+  // if (chartCanvas.value) {
+  //   chartInstance = new Chart(chartCanvas.value, {
+  //     type: 'doughnut',
+  //     data: {
+  //       labels: ['歌回 (Singing)', '游戏 (Game)', '杂谈 (Chat)'],
+  //       datasets: [{
+  //         data: [45, 30, 25], // Mock data
+  //         backgroundColor: ['#F472B6', '#60A5FA', '#FBBF24'],
+  //         borderWidth: 0
+  //       }]
+  //     },
+  //     options: {
+  //       responsive: true,
+  //       maintainAspectRatio: false,
+  //       plugins: { legend: { position: 'bottom' } }
+  //     }
+  //   });
+  // }
 });
 
-onUnmounted(() => {
-  if (chartInstance) chartInstance.destroy();
-});
+// onUnmounted(() => {
+//   if (chartInstance) chartInstance.destroy();
+// });
 </script>
 
 <template>

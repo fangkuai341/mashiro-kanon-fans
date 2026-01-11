@@ -12,7 +12,8 @@
     "@tailwindcss/vite": "4.1.8",
     "ant-design-vue": "4.x",
     "axios": "^1.13.2",
-    "chart.js": "^4.4.0",
+    "dayjs": "^1.11.19",
+    "echarts": "^6.0.0",
     "vue": "^3.3.4",
     "vue-router": "^4.6.4"
   },

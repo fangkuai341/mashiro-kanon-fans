@@ -1,19 +1,16 @@
 <script setup lang="ts">
+import dayjs from 'dayjs';
 import { onMounted, ref } from 'vue';
-import { getNewApi } from '../api';
-import type { NewsItem } from '../types';
-const props = defineProps<{
-  news: NewsItem[];
-  quotes: string[];
-}>();
+import { getNewApi, getQuotesApi } from '../api';
+import type { NewsItem, QuotesItem } from '../type';
 
 const emit = defineEmits(['navigate']);
-const news=ref([])
-const currentQuote = ref('');
+const news=ref<NewsItem[]>([])
+const quotes=ref<QuotesItem[]>([])
 
 onMounted(async() => {
   news.value=await getNewApi()
-  //currentQuote.value = `"${props.quotes[Math.floor(Math.random() * props.quotes.length)]}"`;
+  quotes.value=await getQuotesApi()
 });
 </script>
 
@@ -35,8 +32,8 @@ onMounted(async() => {
       <div class="md:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
         <h3 class="font-bold text-xl mb-4 border-b pb-2 flex items-center gap-2">📢 最新动态 <span class="text-xs font-normal text-gray-400 bg-gray-100 px-2 py-1 rounded">NEWS</span></h3>
         <ul class="space-y-4">
-          <li v-for="(item, idx) in news" :key="idx" class="flex items-start gap-3 pb-3 border-b border-gray-50 last:border-0">
-            <span class="text-xs font-mono text-gray-400 mt-1">{{ item.date }}</span>
+          <li v-for="item in news.slice(0,5)" :key="item.id" class="flex items-start gap-3 pb-3 border-b border-gray-50 last:border-0">
+            <span class="text-xs font-mono text-gray-400 mt-1">{{ dayjs(item.date).format('MM/DD')}}</span>
             <span class="text-xs font-bold text-pink-500 bg-pink-50 px-2 py-0.5 rounded mt-0.5 whitespace-nowrap">{{ item.cat }}</span>
             <span class="text-sm text-gray-700">{{ item.text }}</span>
           </li>
@@ -46,7 +43,7 @@ onMounted(async() => {
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-center items-center text-center bg-pink-50/30">
         <div class="text-4xl mb-4">💬</div>
         <h3 class="font-bold text-lg mb-2 text-pink-600">今日花音语录</h3>
-        <p class="italic text-gray-600 text-sm">{{ currentQuote }}</p>
+        <p class="italic text-gray-600 text-sm">{{ quotes?.[0]?.text }}</p>
       </div>
     </div>
   </div>

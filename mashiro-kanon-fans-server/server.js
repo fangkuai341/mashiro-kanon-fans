@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+
 const apiRoutes = require('./routes/api');
 
 const app = express();
@@ -10,7 +11,6 @@ app.use(express.json());
 
 // 挂载路由模块
 app.use('/api', apiRoutes);
-
 // 启动服务
 const PORT = 3000;
 app.listen(PORT, () => {

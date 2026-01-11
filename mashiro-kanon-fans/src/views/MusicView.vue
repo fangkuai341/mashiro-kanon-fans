@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
-import Chart from 'chart.js/auto';
+import { computed, onMounted, ref } from 'vue';
+//import Chart from 'chart.js/auto';
 import type { Song } from '../types';
 
 const props = defineProps<{
@@ -9,7 +9,7 @@ const props = defineProps<{
 
 const searchTerm = ref('');
 const chartCanvas = ref<HTMLCanvasElement | null>(null);
-let chartInstance: Chart | null = null;
+//let chartInstance: Chart | null = null;
 
 const filteredSongs = computed(() => {
   const term = searchTerm.value.toLowerCase();
@@ -25,37 +25,37 @@ const calculateDaysSince = (dateString: string) => {
 };
 
 onMounted(() => {
-  if (chartCanvas.value) {
-    const artistCounts: Record<string, number> = {};
-    props.songs.forEach(s => {
-      artistCounts[s.artist] = (artistCounts[s.artist] || 0) + 1;
-    });
+  // if (chartCanvas.value) {
+  //   const artistCounts: Record<string, number> = {};
+  //   props.songs.forEach(s => {
+  //     artistCounts[s.artist] = (artistCounts[s.artist] || 0) + 1;
+  //   });
 
-    chartInstance = new Chart(chartCanvas.value, {
-      type: 'bar',
-      data: {
-        labels: Object.keys(artistCounts),
-        datasets: [{
-          label: '翻唱次数',
-          data: Object.values(artistCounts),
-          backgroundColor: '#FBCFE8',
-          borderColor: '#F472B6',
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
-      }
-    });
-  }
+  //   chartInstance = new Chart(chartCanvas.value, {
+  //     type: 'bar',
+  //     data: {
+  //       labels: Object.keys(artistCounts),
+  //       datasets: [{
+  //         label: '翻唱次数',
+  //         data: Object.values(artistCounts),
+  //         backgroundColor: '#FBCFE8',
+  //         borderColor: '#F472B6',
+  //         borderWidth: 1
+  //       }]
+  //     },
+  //     options: {
+  //       responsive: true,
+  //       maintainAspectRatio: false,
+  //       plugins: { legend: { display: false } },
+  //       scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+  //     }
+  //   });
+  // }
 });
 
-onUnmounted(() => {
-  if (chartInstance) chartInstance.destroy();
-});
+// onUnmounted(() => {
+//   if (chartInstance) chartInstance.destroy();
+// });
 </script>
 
 <template>

@@ -12,9 +12,9 @@
     "checkJs": false,
     "jsx": "preserve",
     "lib": [
-      "es2015"
+      "es2015",
       //"es6",
-      //"dom"
+      "dom"
     ],
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,

@@ -9,6 +9,7 @@ router.post('/news', kanonController.createNews);
 // 语录路由
 router.get('/quotes', kanonController.getQuotes);
 
+router.get('/timeline', kanonController.getTimeline);
 // 歌曲路由
 router.get('/songs', kanonController.getSongs);
 

@@ -1,8 +1,10 @@
 const pool = require('../config/db');
+const axios = require('axios');
+const schedule = require('node-schedule');
 // --- 1. 动态 News (CRUD) ---
 exports.getNews = async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT * FROM news ORDER BY id DESC');
+        const [rows] = await pool.query('SELECT * FROM news ORDER BY id ASC');
         res.json(rows);
     } catch (e) { res.status(500).json({ error: e.message }); }
 };
@@ -33,7 +35,7 @@ exports.deleteNews = async (req, res) => {
 // --- 2. 语录 Quotes (CRUD) ---
 exports.getQuotes = async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT * FROM quotes ORDER BY id DESC');
+        const [rows] = await pool.query('SELECT * FROM quotes ORDER BY RAND() LIMIT 1');
         res.json(rows);
     } catch (e) { res.status(500).json({ error: e.message }); }
 };
@@ -64,7 +66,7 @@ exports.deleteQuote = async (req, res) => {
 // --- 3. 时间轴 Timeline (CRUD) ---
 exports.getTimeline = async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT * FROM timeline ORDER BY year DESC, date DESC');
+        const [rows] = await pool.query('SELECT * FROM timeline ORDER BY year DESC, date ASC');
         res.json(rows);
     } catch (e) { res.status(500).json({ error: e.message }); }
 };
@@ -194,13 +196,55 @@ exports.deleteFanart = async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 };
 
-// --- 7. Bilibili 模拟数据 ---
-exports.getBiliStats = (req, res) => {
-    res.json({
-        followerCount: 152300,
-        milestones: [
-            { count: 100000, date: '2023-05-10' },
-            { count: 150000, date: '2024-01-20' }
-        ]
+// --- 2. 封装获取 B站数据的函数 (公用) ---
+async function fetchBiliData() {
+    const targetUrl = `https://api.bilibili.com/x/relation/stat?vmid=401480763`;
+    const response = await axios.get(targetUrl, {
+        headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Referer': 'https://www.bilibili.com/'
+        }
     });
-};
+    return response.data; // 返回整个响应体
+}
+
+// --- 3. 封装保存到数据库的函数 ---
+async function saveToDatabase(followerCount) {
+    try {
+        // SQL 插入语句: 记录 mid, follower, 和当前时间 (NOW())
+        const sql = 'INSERT INTO stats_records (follower, record_time) VALUES ( ?, NOW())';
+        const [result] = await pool.execute(sql, [followerCount]);
+        console.log(`[数据库] 数据已保存! ID: ${result.insertId}, 粉丝数: ${followerCount}`);
+    } catch (err) {
+        console.error('[数据库] 保存失败:', err.message);
+    }
+}
+
+// --- 4. 定时任务: 每天 00:01 执行 ---
+// Cron 格式: 秒 分 时 日 月 周
+const job = schedule.scheduleJob('0 1 0 * * *', async function(){
+    console.log(`[定时任务] 开始执行: ${new Date().toLocaleString()}`);
+    try {
+        // 1. 获取数据
+        const resData = await fetchBiliData();
+        
+        if (resData.code === 0 && resData.data) {
+            const follower = resData.data.follower;
+            // 2. 存入数据库
+            await saveToDatabase(follower);
+        } else {
+            console.error('[定时任务] B站接口返回异常:', resData);
+        }
+    } catch (error) {
+        console.error('[定时任务] 执行出错:', error.message);
+    }
+});
+
+// --- 7. Bilibili 模拟数据 ---
+exports.getBiliStats =async (req, res) => {
+    
+    try {
+        const [rows] = await pool.query('SELECT * FROM stats_records ORDER BY id DESC');
+        res.json(rows);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+}
