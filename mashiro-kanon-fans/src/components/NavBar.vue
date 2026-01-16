@@ -30,7 +30,7 @@ const tabs: { id: string; name: string; routerName: string; tab: string }[] = [
     tab: TabName.Live
   }, {
     id: 'community',
-    name: '直播中心',
+    name: '后花园',
     routerName: RouterName.Community,
     tab: TabName.Community
   }, {

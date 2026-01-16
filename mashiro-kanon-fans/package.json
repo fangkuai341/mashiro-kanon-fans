@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@tailwindcss/vite": "4.1.8",
+    "@tailwindcss/vite": "4.1.0",
     "ant-design-vue": "4.x",
     "axios": "^1.13.2",
     "dayjs": "^1.11.19",
@@ -21,7 +21,7 @@
     "@vitejs/plugin-vue": "^4.2.3",
     "autoprefixer": "^10.4.14",
     "postcss": "^8.4.27",
-    "tailwindcss": "4.1.8",
+    "tailwindcss": "4.1.0",
     "typescript": "^5.0.2",
     "vite": "^4.4.5",
     "vue-tsc": "^1.8.5"
