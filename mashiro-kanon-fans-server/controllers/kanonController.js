@@ -100,11 +100,11 @@ exports.getSongs = async (req, res) => {
         let sql = 'SELECT * FROM songs';
         let params = [];
         if (req.query.q) {
-            sql += ' WHERE title LIKE ? OR artist LIKE ?';
+            sql += ' WHERE title LIKE ? OR artist LIKE ? OR chinese_name LIKE ?';
             const term = `%${req.query.q}%`;
-            params = [term, term];
+            params = [term, term, term];
         }
-        const [rows] = await pool.query(sql + ' ORDER BY last_sung DESC', params);
+        const [rows] = await pool.query(sql + ' ORDER BY last_song DESC', params);
         res.json(rows);
     } catch (e) { res.status(500).json({ error: e.message }); }
 };
@@ -127,19 +127,69 @@ exports.updateSong = async (req, res) => {
 
 // 注：根据表格设计，歌曲不开放删除功能（保留记录）
 
+/** 获取前 30 天常驻歌手偏好：按 '/' 拆分 artist，统计每位歌手的演唱次数 */
+exports.getArtistPreferences = async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT artist, last_song FROM songs WHERE artist IS NOT NULL AND artist != ""');
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const countByArtist = {};
+        for (const row of rows) {
+            const raw = row.last_song;
+            if (raw == null || raw === '') continue;
+            const d = new Date(raw);
+            if (isNaN(d.getTime()) || d < thirtyDaysAgo) continue;
+            const artists = (row.artist || '')
+                .split('/')
+                .map((s) => s.trim())
+                .filter(Boolean);
+            for (const name of artists) {
+                countByArtist[name] = (countByArtist[name] || 0) + 1;
+            }
+        }
+        const result = Object.entries(countByArtist)
+            .map(([artist, count]) => ({ artist, count }))
+            .sort((a, b) => b.count - a.count).slice(0, 5);
+        res.json(result);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+};
+
 // --- 5. 直播日程 Schedule (CRUD + Search) ---
 exports.getSchedule = async (req, res) => {
     try {
+        const { year, month} = req.query;
         let sql = 'SELECT * FROM schedule';
+        let conditions = [];
         let params = [];
-        if (req.query.q) {
-            sql += ' WHERE text LIKE ? OR type LIKE ?';
-            const term = `%${req.query.q}%`;
-            params = [term, term];
+
+        // 根据年份筛选
+        if (year) {
+            conditions.push('YEAR(date) = ?');
+            params.push(year);
         }
-        const [rows] = await pool.query(sql + ' ORDER BY time ASC', params);
+
+        // 根据月份筛选
+        if (month) {
+            conditions.push('MONTH(date) = ?');
+            params.push(month);
+        }
+
+       
+
+        // 如果有条件，添加 WHERE 子句
+        if (conditions.length > 0) {
+            sql += ' WHERE ' + conditions.join(' AND ');
+        }
+
+        sql += ' ORDER BY date ASC';
+
+        const [rows] = await pool.query(sql, params);
         res.json(rows);
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
 };
 
 exports.createSchedule = async (req, res) => {
@@ -240,11 +290,61 @@ const job = schedule.scheduleJob('0 1 0 * * *', async function(){
     }
 });
 
-// --- 7. Bilibili 模拟数据 ---
+// --- 7. Bilibili 粉丝数据  
 exports.getBiliStats =async (req, res) => {
     
     try {
         const [rows] = await pool.query('SELECT * FROM stats_records ORDER BY id DESC');
         res.json(rows);
     } catch (e) { res.status(500).json({ error: e.message }); }
+}
+
+// --- 9. Bilibili 系列稿件列表 (透传第三方接口) ---
+exports.getBiliSeriesArchives = async (req, res) => {
+    const {
+        mid = '401480763',
+        current_mid = '293942714',
+        series_id = '210517',
+        ps = '3',
+        pn = '1',
+    } = req.query;
+
+    try {
+        const response = await axios.get('https://api.bilibili.com/x/series/archives', {
+            params: { mid, current_mid, series_id, ps, pn },
+            timeout: 8000,
+        });
+
+        res.json(response.data);
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to fetch Bilibili series archives', detail: e.message });
+    }
+};
+// --- 8. 商店 Shop (CRUD) ---
+exports.getShop = async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM shopp ');
+        res.json(rows);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+}
+
+// --- 10. 图片上传 Upload Image ---
+exports.uploadImage = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: '没有上传文件' });
+        }
+
+        // 返回图片的访问URL
+        const imageUrl = `/uploads/${req.file.filename}`;
+        res.json({ 
+            success: true,
+            url: imageUrl,
+            filename: req.file.filename,
+            originalname: req.file.originalname,
+            size: req.file.size
+        });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
 }
