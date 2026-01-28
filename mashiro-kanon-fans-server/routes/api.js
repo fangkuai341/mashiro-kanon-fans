@@ -42,17 +42,34 @@ const upload = multer({
 // 动态路由
 router.get('/news', kanonController.getNews);
 router.post('/news', kanonController.createNews);
+router.put('/news/:id', kanonController.updateNews);
+router.delete('/news/:id', kanonController.deleteNews);
 
 // 语录路由
 router.get('/quotes', kanonController.getQuotes);
+router.get('/allQuotes', kanonController.getAllQuotes);
+router.post('/quotes', kanonController.createQuote);
+router.put('/quotes/:id', kanonController.updateQuote);
+router.delete('/quotes/:id', kanonController.deleteQuote);
 
+// 时间轴路由
 router.get('/timeline', kanonController.getTimeline);
+router.post('/timeline', kanonController.createTimeline);
+router.put('/timeline/:id', kanonController.updateTimeline);
+router.delete('/timeline/:id', kanonController.deleteTimeline);
+
 // 歌曲路由
 router.get('/songs', kanonController.getSongs);
 router.get('/songs/artist-preferences', kanonController.getArtistPreferences);
+router.post('/songs', kanonController.createSong);
+router.put('/songs/:id', kanonController.updateSong);
+router.delete('/songs/:id', kanonController.deleteSong);
 
-// 日程路由
-router.get('/schedule', kanonController.getSchedule);
+// 同人图路由
+router.get('/fanarts', kanonController.getFanarts);
+router.post('/fanarts', kanonController.createFanart);
+router.delete('/fanarts/:id', kanonController.deleteFanart);
+
 
 // 第三方数据路由
 router.get('/bilibili/stats', kanonController.getBiliStats);

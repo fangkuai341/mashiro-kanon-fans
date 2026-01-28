@@ -40,6 +40,14 @@ exports.getQuotes = async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 };
 
+// 获取所有语录
+exports.getAllQuotes = async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM quotes ORDER BY id ASC');
+        res.json(rows);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+};
+
 exports.createQuote = async (req, res) => {
     const { text } = req.body;
     try {
@@ -110,22 +118,30 @@ exports.getSongs = async (req, res) => {
 };
 
 exports.createSong = async (req, res) => {
-    const { title, artist, last_sung, link } = req.body;
+    const { title, artist, last_song, link } = req.body;
     try {
-        const [result] = await pool.query('INSERT INTO songs (title, artist, last_sung, link) VALUES (?, ?, ?, ?)', [title, artist, last_sung, link]);
+        const [result] = await pool.query('INSERT INTO songs (title, artist, last_song, link) VALUES (?, ?, ?, ?)', [title, artist, last_song, link]);
         res.json({ id: result.insertId });
     } catch (e) { res.status(500).json({ error: e.message }); }
 };
 
 exports.updateSong = async (req, res) => {
-    const { title, artist, last_sung, link } = req.body;
+    const { title, artist, last_song, link } = req.body;
     try {
-        await pool.query('UPDATE songs SET title = ?, artist = ?, last_sung = ?, link = ? WHERE id = ?', [title, artist, last_sung, link, req.params.id]);
+        await pool.query('UPDATE songs SET title = ?, artist = ?, last_song = ?, link = ? WHERE id = ?', [title, artist, last_song, link, req.params.id]);
         res.sendStatus(200);
     } catch (e) { res.status(500).json({ error: e.message }); }
 };
 
-// 注：根据表格设计，歌曲不开放删除功能（保留记录）
+// 删除歌曲
+exports.deleteSong = async (req, res) => {
+    try {
+        await pool.query('DELETE FROM songs WHERE id = ?', [req.params.id]);
+        res.sendStatus(200);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+};
+
+// 注：如需保留记录，可改为软删除（例如增加 is_deleted 字段）
 
 /** 获取前 30 天常驻歌手偏好：按 '/' 拆分 artist，统计每位歌手的演唱次数 */
 exports.getArtistPreferences = async (req, res) => {
@@ -156,64 +172,6 @@ exports.getArtistPreferences = async (req, res) => {
     }
 };
 
-// --- 5. 直播日程 Schedule (CRUD + Search) ---
-exports.getSchedule = async (req, res) => {
-    try {
-        const { year, month} = req.query;
-        let sql = 'SELECT * FROM schedule';
-        let conditions = [];
-        let params = [];
-
-        // 根据年份筛选
-        if (year) {
-            conditions.push('YEAR(date) = ?');
-            params.push(year);
-        }
-
-        // 根据月份筛选
-        if (month) {
-            conditions.push('MONTH(date) = ?');
-            params.push(month);
-        }
-
-       
-
-        // 如果有条件，添加 WHERE 子句
-        if (conditions.length > 0) {
-            sql += ' WHERE ' + conditions.join(' AND ');
-        }
-
-        sql += ' ORDER BY date ASC';
-
-        const [rows] = await pool.query(sql, params);
-        res.json(rows);
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
-};
-
-exports.createSchedule = async (req, res) => {
-    const { type, time, text } = req.body;
-    try {
-        const [result] = await pool.query('INSERT INTO schedule (type, time, text) VALUES (?, ?, ?)', [type, time, text]);
-        res.json({ id: result.insertId });
-    } catch (e) { res.status(500).json({ error: e.message }); }
-};
-
-exports.updateSchedule = async (req, res) => {
-    const { type, time, text } = req.body;
-    try {
-        await pool.query('UPDATE schedule SET type = ?, time = ?, text = ? WHERE id = ?', [type, time, text, req.params.id]);
-        res.sendStatus(200);
-    } catch (e) { res.status(500).json({ error: e.message }); }
-};
-
-exports.deleteSchedule = async (req, res) => {
-    try {
-        await pool.query('DELETE FROM schedule WHERE id = ?', [req.params.id]);
-        res.sendStatus(200);
-    } catch (e) { res.status(500).json({ error: e.message }); }
-};
 
 // --- 6. 同人图 Fanart (CRUD) ---
 exports.getFanarts = async (req, res) => {
@@ -228,14 +186,6 @@ exports.createFanart = async (req, res) => {
     try {
         const [result] = await pool.query('INSERT INTO fanarts (author, title, img_url, source_link) VALUES (?, ?, ?, ?)', [author, title, img_url, source_link]);
         res.json({ id: result.insertId });
-    } catch (e) { res.status(500).json({ error: e.message }); }
-};
-
-exports.updateFanart = async (req, res) => {
-    const { author, title, img_url, source_link } = req.body;
-    try {
-        await pool.query('UPDATE fanarts SET author = ?, title = ?, img_url = ?, source_link = ? WHERE id = ?', [author, title, img_url, source_link, req.params.id]);
-        res.sendStatus(200);
     } catch (e) { res.status(500).json({ error: e.message }); }
 };
 

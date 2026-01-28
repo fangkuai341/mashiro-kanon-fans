@@ -15,10 +15,6 @@ export function getBilibiliStatsApi(): Promise<BilibiliStatsItem[]>{
   return httpService.get(`/api/bilibili/stats`)
 }
 
-// 获取直播日程（按月）
-export function getScheduleApi(year?: string, month?: string): Promise<ScheduleApiItem[]> {
-  return httpService.get(`/api/schedule?year=${year}&month=${month}`)
-}
 
 // 获取商店商品
 export function getShopApi(): Promise<ShopItem[]> {
