@@ -116,3 +116,21 @@ export interface ScheduleApiItem {
   type: LiveType; // 直播类型
   link: string; // 回放链接
 }
+
+// 反馈类型
+export type FeedbackType = 'bug' | '需求' | '其他';
+
+// 反馈项
+export interface FeedbackItem {
+  id: number;
+  type: FeedbackType;
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// 创建反馈请求
+export interface CreateFeedbackRequest {
+  type: FeedbackType;
+  content: string;
+}

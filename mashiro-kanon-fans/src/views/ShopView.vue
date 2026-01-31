@@ -1,30 +1,55 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
+import { gsap } from 'gsap';
+import { Icon } from '@iconify/vue';
 import { getShopApi } from '../api';
 import type { ShopItem } from '../type';
-
-const items = ref<ShopItem[]>([]);
 
 onMounted(async () => {
   try {
     items.value = await getShopApi();
+    
+    // GSAP 动画
+    gsap.from('.shop-header', {
+      opacity: 0,
+      y: -20,
+      duration: 0.6,
+      ease: 'power3.out'
+    });
+    
+    gsap.from('.shop-item', {
+      opacity: 0,
+      y: 30,
+      scale: 0.9,
+      duration: 0.5,
+      stagger: 0.1,
+      delay: 0.2,
+      ease: 'back.out(1.7)'
+    });
   } catch (e) {
     console.error('获取商店数据失败:', e);
   }
 });
+
+const items = ref<ShopItem[]>([]);
 </script>
 
 <template>
   <div class="fade-in space-y-6">
-    <h2 class="text-2xl font-bold mb-2">周边商店 🛍️</h2>
-    <p class="text-sm text-gray-500 mb-4">
-      当前为从官方渠道抓取的实装周边信息，点击可跳转到购买页面。
-    </p>
+    <div class="shop-header">
+      <h2 class="text-2xl md:text-3xl font-bold mb-2 gradient-text flex items-center gap-2">
+        周边商店
+        <Icon icon="noto:shopping-bags" class="text-2xl animate-pulse" style="animation-duration: 2s;" />
+      </h2>
+      <p class="text-sm text-gray-600 mb-4">
+        当前为从官方渠道抓取的实装周边信息，点击可跳转到购买页面。
+      </p>
+    </div>
     <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
       <div
         v-for="item in items"
         :key="item.itemsId"
-        class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden group flex flex-col"
+        class="shop-item bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-pink-100/50 overflow-hidden group flex flex-col card-hover"
       >
         <a
           :href="item.jumpUrl"
@@ -41,9 +66,9 @@ onMounted(async () => {
           />
           <div
             v-else
-            class="h-full w-full flex items-center justify-center text-4xl group-hover:scale-105 transition-transform"
+            class="h-full w-full flex items-center justify-center group-hover:scale-105 transition-transform"
           >
-            🛍️
+            <Icon icon="noto:shopping-bags" class="text-5xl" />
           </div>
         </a>
         <div class="p-4 flex-1 flex flex-col">
@@ -61,7 +86,7 @@ onMounted(async () => {
             :href="item.jumpUrl"
             target="_blank"
             rel="noreferrer noopener"
-            class="w-full mt-3 bg-gray-800 text-white text-xs py-2 rounded text-center hover:bg-gray-700 transition-colors"
+            class="shop-btn w-full mt-3 text-white text-xs py-2 rounded-lg text-center transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
           >
             前往购买
           </a>
@@ -76,3 +101,13 @@ onMounted(async () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.shop-btn {
+  background: linear-gradient(to right, #ff9800, #ffc107);
+}
+
+.shop-btn:hover {
+  background: linear-gradient(to right, #f57c00, #ffb300);
+}
+</style>

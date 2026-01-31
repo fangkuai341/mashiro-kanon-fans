@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import dayjs from "dayjs";
 import { onMounted, ref, nextTick, watch } from "vue";
+import { gsap } from "gsap";
+import { Icon } from "@iconify/vue";
 import { getTimelineApi } from "../api";
 import { TimelineItem } from "../type";
 import Chart from "./Chart.vue";
@@ -48,19 +50,73 @@ onMounted(async () => {
   const res = await getTimelineApi();
   timeline.value = res;
   checkIfScrollable();
+  
+  // 等待DOM渲染完成
+  await nextTick();
+  
+  // GSAP 动画
+  const profileHeader = document.querySelector('.profile-header');
+  if (profileHeader) {
+    gsap.fromTo(profileHeader, 
+      { opacity: 0, y: -20 },
+      { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }
+    );
+  }
+  
+  const profileCard = document.querySelector('.profile-card');
+  if (profileCard) {
+    gsap.fromTo(profileCard,
+      { opacity: 0, scale: 0.9 },
+      { opacity: 1, scale: 1, duration: 0.7, delay: 0.2, ease: 'back.out(1.7)' }
+    );
+  }
+  
+  const timelineCard = document.querySelector('.timeline-card');
+  if (timelineCard) {
+    gsap.fromTo(timelineCard,
+      { opacity: 0, x: -30 },
+      { 
+        opacity: 1, 
+        x: 0, 
+        duration: 0.7, 
+        delay: 0.4, 
+        ease: 'power2.out',
+        onComplete: () => {
+          if (timelineCard) gsap.set(timelineCard, { clearProps: 'all' });
+        }
+      }
+    );
+  }
+  
+  const chartCard = document.querySelector('.chart-card');
+  if (chartCard) {
+    gsap.fromTo(chartCard,
+      { opacity: 0, x: 30 },
+      { 
+        opacity: 1, 
+        x: 0, 
+        duration: 0.7, 
+        delay: 0.6, 
+        ease: 'power2.out',
+        onComplete: () => {
+          if (chartCard) gsap.set(chartCard, { clearProps: 'all' });
+        }
+      }
+    );
+  }
 });
 </script>
 
 <template>
   <div class="fade-in space-y-8">
     <!-- Bio Section omitted for brevity, use layout from original -->
-    <div class="flex items-center justify-between">
+    <div class="profile-header flex items-center justify-between">
       <div>
-        <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+        <h2 class="text-2xl md:text-3xl font-bold gradient-text flex items-center gap-2">
           关于真白花音
-          <span class="text-xl">🕒</span>
+          <Icon icon="noto:alarm-clock" class="text-xl animate-pulse" style="animation-duration: 2s;" />
         </h2>
-        <p class="text-sm text-gray-500 mt-1">
+        <p class="text-sm text-gray-600 mt-1">
           了解清楚系(?)主播的成长之路。
         </p>
       </div>
@@ -68,7 +124,7 @@ onMounted(async () => {
     </div>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
       <div
-        class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100 h-fit"
+        class="profile-card bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden border border-orange-100/50 h-fit card-hover"
       >
         <div style="padding: 20px 0; background: #f3f3f3">
           <video
@@ -85,11 +141,14 @@ onMounted(async () => {
         <div class="p-6 space-y-4">
           <div class="flex justify-between items-center border-b pb-2">
             <span class="text-gray-500">姓名</span>
-            <span class="font-bold text-pink-600">真白花音</span>
+            <span class="font-bold gradient-text">真白花音</span>
           </div>
           <div class="flex justify-between items-center border-b pb-2">
             <span class="text-gray-500">生日</span>
-            <span>12月24日 🎄</span>
+            <span class="flex items-center gap-1">
+              12月24日
+              <Icon icon="noto:christmas-tree" class="text-base" />
+            </span>
           </div>
           <div class="flex justify-between items-center border-b pb-2">
             <span class="text-gray-500">身高</span>
@@ -97,7 +156,7 @@ onMounted(async () => {
           </div>
           <div class="flex justify-between items-center border-b pb-2">
             <span class="text-gray-500">粉丝名</span>
-            <span class="bg-yellow-100 text-yellow-800 px-2 rounded text-sm"
+            <span class="bg-pink-100 text-pink-700 px-2 rounded text-sm"
               >Mashiromates</span
             >
           </div>
@@ -111,8 +170,11 @@ onMounted(async () => {
       </div>
 
       <div class="md:col-span-2 space-y-6">
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h3 class="font-bold text-lg mb-4 text-pink-500">🌸 经历时间轴</h3>
+        <div class="timeline-card bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-orange-100/50 card-hover">
+          <h3 class="font-bold text-lg mb-4 gradient-text flex items-center gap-2">
+            <Icon icon="noto:scroll" class="text-lg" />
+            经历时间轴
+          </h3>
           <div>
             <!-- 内容区域 wrapper - 用于控制高度 -->
             <div
@@ -128,15 +190,15 @@ onMounted(async () => {
               >
                 <div
                   ref="timelineContentRef"
-                  class="relative border-l-2 border-pink-200 ml-3 space-y-6 pb-2"
+                  class="relative border-l-2 border-pink-300 ml-3 space-y-6 pb-2"
                 >
                   <div
                     v-for="(item, idx) in timeline"
                     :key="idx"
-                    class="ml-6 relative"
+                    class="ml-6 relative group"
                   >
                     <div
-                      class="absolute -left-[31px] top-1.5 w-3 h-3 rounded-full bg-pink-400 border-2 border-white ring-2 ring-pink-100"
+                      class="absolute -left-[31px] top-1.5 w-3 h-3 rounded-full bg-gradient-to-r from-pink-400 to-pink-500 border-2 border-white ring-2 ring-pink-200 transition-transform group-hover:scale-125"
                     ></div>
                     <div class="text-xs text-pink-500 font-bold">
                       {{ item.year }}
@@ -180,9 +242,10 @@ onMounted(async () => {
           </div>
         </div>
 
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h3 class="font-bold text-lg mb-4 text-gray-700">
-            📈 粉丝成长里程碑
+        <div class="chart-card bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-pink-100/50 card-hover">
+          <h3 class="font-bold text-lg mb-4 gradient-text flex items-center gap-2">
+            <Icon icon="noto:chart-increasing" class="text-lg" />
+            粉丝成长里程碑
           </h3>
           <div class="chart-container">
             <Chart />
@@ -192,3 +255,11 @@ onMounted(async () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.timeline-card,
+.chart-card {
+  opacity: 1;
+  transform: translate(0, 0);
+}
+</style>

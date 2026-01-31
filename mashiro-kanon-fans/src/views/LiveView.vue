@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch, nextTick } from 'vue';
+import { gsap } from 'gsap';
+import { Icon } from '@iconify/vue';
 import dayjs, { Dayjs } from 'dayjs';
 import * as echarts from 'echarts';
 import { getBilibiliArchivesApi } from '../api';
@@ -271,11 +273,47 @@ const handleClickReplay = (link: string) => {
   window.open(link, '_blank','noopener,noreferrer');
 };
 
-onMounted(() => {
+onMounted(async () => {
   // 初始化加载所有日程数据（只调用一次）
   fetchAllScheduleData();
   fetchReplays();
   
+  // 等待DOM渲染完成
+  await nextTick();
+  
+  // GSAP 动画
+  const liveHeader = document.querySelector('.live-header');
+  if (liveHeader) {
+    gsap.fromTo(liveHeader,
+      { opacity: 0, y: -20 },
+      { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }
+    );
+  }
+  
+  const calendarContainer = document.querySelector('.calendar-container');
+  if (calendarContainer) {
+    gsap.fromTo(calendarContainer,
+      { opacity: 0, x: -30 },
+      { opacity: 1, x: 0, duration: 0.7, delay: 0.2, ease: 'power2.out' }
+    );
+  }
+  
+  const replayContainer = document.querySelector('.replay-container');
+  if (replayContainer) {
+    gsap.fromTo(replayContainer,
+      { opacity: 0, x: 30 },
+      { 
+        opacity: 1, 
+        x: 0, 
+        duration: 0.7, 
+        delay: 0.4, 
+        ease: 'power2.out',
+        onComplete: () => {
+          if (replayContainer) gsap.set(replayContainer, { clearProps: 'all' });
+        }
+      }
+    );
+  }
   
   window.addEventListener('resize', () => {
     chartInstance?.resize();
@@ -299,13 +337,13 @@ onBeforeUnmount(() => {
 <template>
   <div class="fade-in max-w-6xl mx-auto py-8 space-y-6">
     <!-- 标题与说明 -->
-    <div class="flex items-center justify-between">
+    <div class="live-header flex items-center justify-between">
       <div>
-        <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+        <h2 class="text-2xl md:text-3xl font-bold gradient-text flex items-center gap-2">
           直播中心
-          <span class="text-xl">🕒</span>
+          <Icon icon="noto:alarm-clock" class="text-xl animate-pulse" style="animation-duration: 2s;" />
         </h2>
-        <p class="text-sm text-gray-500 mt-1">
+        <p class="text-sm text-gray-600 mt-1">
           直播日程安排与内容分析，一目了然掌握花音的直播计划。
         </p>
       </div>
@@ -315,7 +353,7 @@ onBeforeUnmount(() => {
     <!-- 主体：左侧日历 + 右侧分析 -->
     <div class="flex flex-col lg:flex-row gap-6">
       <!-- 左：日历 -->
-      <div class="flex-1 bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col">
+      <div class="calendar-container flex-1 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-pink-100/50 p-6 flex flex-col card-hover">
         <!-- 加载状态 -->
         <div v-if="loading" class="flex items-center justify-center py-8 text-gray-500 text-sm">
           加载中...
@@ -324,7 +362,7 @@ onBeforeUnmount(() => {
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center gap-3">
             <h3 class="text-lg font-semibold text-gray-800">直播日程</h3>
-            <span class="px-2 py-0.5 rounded-full text-xs bg-pink-50 text-pink-500 border border-pink-100">
+            <span class="px-2 py-0.5 rounded-full text-xs bg-gradient-to-r from-pink-50 to-pink-100 text-pink-500 border border-pink-200">
               月视图
             </span>
           </div>
@@ -363,7 +401,7 @@ onBeforeUnmount(() => {
             :class="[
               cell.isCurrentMonth ? 'bg-gray-50 border-gray-100' : 'bg-white border-dashed border-gray-100 text-gray-300',
               selectedDate && cell.isCurrentMonth && cell.date.isSame(selectedDate, 'day')
-                ? 'ring-2 ring-pink-300 border-pink-300 bg-pink-50'
+                ? 'ring-2 ring-pink-400 border-pink-400 bg-gradient-to-br from-pink-50 to-pink-100'
                 : '',
               cell.schedules && cell.schedules.length > 0 ? 'hover:border-pink-300 hover:bg-pink-50 hover:shadow-sm cursor-pointer' : ''
             ]"
@@ -375,7 +413,7 @@ onBeforeUnmount(() => {
               </span>
               <span
                 v-if="isToday(cell)"
-                class="px-1.5 py-0.5 rounded-full text-[10px] bg-pink-500 text-white font-medium"
+                class="px-1.5 py-0.5 rounded-full text-[10px] bg-gradient-to-r from-pink-400 to-pink-500 text-white font-medium shadow-sm"
               >
                 今天
               </span>
@@ -388,7 +426,7 @@ onBeforeUnmount(() => {
                 class="flex items-center gap-1"
               >
                 <span
-                  class="w-2 h-2 rounded-full flex-shrink-0 bg-pink-500"
+                  class="w-2 h-2 rounded-full flex-shrink-0 bg-gradient-to-r from-pink-400 to-pink-500 shadow-sm"
                 />
                 <span class="text-[10px] text-gray-600 truncate">
                   {{ schedule.title.replace(/【.*?】/, '') }}
@@ -402,7 +440,7 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- 选中日期详情 -->
-        <div class="mt-4 rounded-xl bg-pink-50/60 border border-pink-100 px-4 py-3 flex items-center justify-between">
+        <div class="mt-4 rounded-xl bg-gradient-to-r from-pink-50/80 to-pink-100/80 border border-pink-200 px-4 py-3 flex items-center justify-between backdrop-blur-sm shadow-sm">
           <div>
             <div class="text-xs text-gray-500 mb-1">
               {{ selectedDate ? selectedDate.format('YYYY 年 M 月 D 日 dddd') : '请选择日期' }}
@@ -411,8 +449,8 @@ onBeforeUnmount(() => {
               <div
                 v-for="(schedule, idx) in selectedSchedules"
                 :key="idx"
-                class="border-b border-pink-100 pb-2 last:border-0 last:pb-0 cursor-pointer"
-                @click="handleClickReplay(schedule.link)"
+                class="border-b border-pink-100 pb-2 last:border-0 last:pb-0 cursor-pointer hover:bg-pink-50/50 transition-colors rounded px-2 py-1"
+                @click="schedule.link ? handleClickReplay(schedule.link) : undefined"
               >
                 <div class="text-sm font-semibold text-gray-800">
                   {{ schedule.title }}
@@ -433,7 +471,7 @@ onBeforeUnmount(() => {
   
 
         <!-- 近期回放 -->
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 h-full">
+        <div class="replay-container bg-white/80 backdrop-blur-sm p-5 rounded-2xl shadow-lg border border-pink-100/50 h-full card-hover">
           <h3 class="font-bold text-gray-800 mb-3 text-sm">近期回放归档</h3>
           <div v-if="replayLoading" class="text-xs text-gray-400">加载中...</div>
           <ul v-else-if="replays.length" class="space-y-2 text-xs">
@@ -452,3 +490,10 @@ onBeforeUnmount(() => {
     </div>
 
 </template>
+
+<style scoped>
+.replay-container {
+  opacity: 1;
+  transform: translate(0, 0);
+}
+</style>

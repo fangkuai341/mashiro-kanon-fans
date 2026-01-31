@@ -298,3 +298,32 @@ exports.uploadImage = async (req, res) => {
         res.status(500).json({ error: e.message });
     }
 }
+
+// --- 11. 反馈 Feedbacks (CRUD) ---
+exports.getFeedbacks = async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM feedbacks ORDER BY created_at DESC');
+        res.json(rows);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+};
+
+exports.createFeedback = async (req, res) => {
+    const { type, content } = req.body;
+    try {
+        if (!type || !content) {
+            return res.status(400).json({ error: '类型和内容不能为空' });
+        }
+        if (!['bug', '需求', '其他'].includes(type)) {
+            return res.status(400).json({ error: '类型必须是 bug、需求 或 其他' });
+        }
+        const [result] = await pool.query('INSERT INTO feedbacks (type, content) VALUES (?, ?)', [type, content]);
+        res.json({ id: result.insertId, success: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+};
+
+exports.deleteFeedback = async (req, res) => {
+    try {
+        await pool.query('DELETE FROM feedbacks WHERE id = ?', [req.params.id]);
+        res.sendStatus(200);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+};

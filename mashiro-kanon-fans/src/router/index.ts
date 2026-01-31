@@ -7,6 +7,7 @@ import LiveView from '../views/LiveView.vue';
 import MusicView from '../views/MusicView.vue';
 import ProfileView from '../views/ProfileView.vue';
 import ShopView from '../views/ShopView.vue';
+import FeedbackView from '../views/FeedbackView.vue';
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -56,6 +57,14 @@ const routes: Array<RouteRecordRaw> = [
     component: ShopView,
     meta:{
       tab:TabName.Shop
+    }
+  },
+  {
+    path: '/feedback',
+    name: RouterName.Feedback,
+    component: FeedbackView,
+    meta:{
+      tab:TabName.Feedback
     }
   }
 ];

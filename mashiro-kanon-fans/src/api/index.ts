@@ -1,4 +1,4 @@
-import { ArtistPreferenceItem, BilibiliStatsItem, NewsItem, QuotesItem, ScheduleApiItem, ShopItem, SongApiItem, TimelineItem } from '../type'
+import { ArtistPreferenceItem, BilibiliStatsItem, CreateFeedbackRequest, FeedbackItem, NewsItem, QuotesItem, ScheduleApiItem, ShopItem, SongApiItem, TimelineItem } from '../type'
 import httpService from './request'
 
 export function getNewApi(): Promise<NewsItem[]>{
@@ -48,4 +48,13 @@ export function getSongsApi(q?: string): Promise<SongApiItem[]> {
 // 获取前 30 天常驻歌手偏好（歌手名 + 演唱次数，artist 已按 '/' 拆分）
 export function getArtistPreferencesApi(): Promise<ArtistPreferenceItem[]> {
   return httpService.get('/api/songs/artist-preferences')
+}
+
+// 反馈相关 API
+export function getFeedbacksApi(): Promise<FeedbackItem[]> {
+  return httpService.get('/api/feedbacks')
+}
+
+export function createFeedbackApi(data: CreateFeedbackRequest): Promise<{ id: number; success: boolean }> {
+  return httpService.post('/api/feedbacks', data)
 }

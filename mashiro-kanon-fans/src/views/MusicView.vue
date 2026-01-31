@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { gsap } from 'gsap';
+import { Icon } from '@iconify/vue';
 import * as echarts from 'echarts';
 import type { Song } from '../type';
 import { getArtistPreferencesApi, getSongsApi } from '../api';
@@ -134,8 +136,8 @@ const fetchAndRenderChart = async () => {
         data: counts,
         itemStyle: {
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: '#FBCFE8' },
-            { offset: 1, color: '#F472B6' }
+            { offset: 0, color: '#FFC0CB' },
+            { offset: 1, color: '#FFB6C1' }
           ])
         },
         label: {
@@ -162,6 +164,52 @@ onMounted(async () => {
   // 等待 DOM 渲染完成后再初始化图表
   await nextTick();
   fetchAndRenderChart();
+  
+  // 再次等待确保所有元素都已渲染
+  await nextTick();
+  
+  // GSAP 动画
+  const musicHeader = document.querySelector('.music-header');
+  if (musicHeader) {
+    gsap.fromTo(musicHeader,
+      { opacity: 0, y: -20 },
+      { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }
+    );
+  }
+  
+  const songTable = document.querySelector('.song-table');
+  if (songTable) {
+    gsap.fromTo(songTable,
+      { opacity: 0, x: -30 },
+      { 
+        opacity: 1, 
+        x: 0, 
+        duration: 0.7, 
+        delay: 0.2, 
+        ease: 'power2.out',
+        onComplete: () => {
+          if (songTable) gsap.set(songTable, { clearProps: 'all' });
+        }
+      }
+    );
+  }
+  
+  const chartCard = document.querySelector('.chart-card');
+  if (chartCard) {
+    gsap.fromTo(chartCard,
+      { opacity: 0, x: 30 },
+      { 
+        opacity: 1, 
+        x: 0, 
+        duration: 0.7, 
+        delay: 0.4, 
+        ease: 'power2.out',
+        onComplete: () => {
+          if (chartCard) gsap.set(chartCard, { clearProps: 'all' });
+        }
+      }
+    );
+  }
 });
 
 onBeforeUnmount(() => {
@@ -175,27 +223,37 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="fade-in space-y-6">
-    <div class="flex flex-col md:flex-row justify-between items-end gap-4 border-b border-gray-200 pb-4">
+    <div class="music-header flex flex-col md:flex-row justify-between items-end gap-4 border-b border-pink-100 pb-4">
       <div>
-        <h2 class="text-2xl font-bold mb-2 text-pink-600">音乐数据库 🎧</h2>
-        <p class="text-sm text-gray-500">查询歌单、回放链接及最近演唱时间。</p>
+        <h2 class="text-2xl md:text-3xl font-bold mb-2 gradient-text flex items-center gap-2">
+          音乐数据库
+          <Icon icon="noto:headphone" class="text-2xl animate-pulse" style="animation-duration: 2s;" />
+        </h2>
+        <p class="text-sm text-gray-600">查询歌单、回放链接及最近演唱时间。</p>
       </div>
-      <div class="w-full md:w-1/3 relative">
-        <span class="absolute left-3 top-2.5 text-gray-400">🔍</span>
-        <input v-model="searchTerm" type="text" placeholder="搜索歌名、原唱..."
-               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-pink-300 transition-shadow">
+      <div class="w-full md:w-1/3 relative ">
+       
+        <input 
+          v-model="searchTerm" 
+          type="text" 
+          placeholder="搜索歌名、原唱..."
+          class="w-full pl-10 pr-4 py-3 border-2 border-pink-200 rounded-full focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400 transition-all bg-white/80 backdrop-blur-sm shadow-sm"
+        >
       </div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div class="md:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+      <div class="song-table md:col-span-2 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-pink-100/50 overflow-hidden flex flex-col card-hover">
         <div class="overflow-x-auto flex-1" style="max-height: calc(100vh - 300px);">
           <div v-if="loading" class="p-8 text-center text-gray-500">
-            加载中...
+            <div class="inline-flex items-center gap-2">
+              <div class="w-5 h-5 border-2 border-pink-400 border-t-transparent rounded-full animate-spin"></div>
+              加载中...
+            </div>
           </div>
           <table v-else class="w-full text-left border-collapse">
-            <thead class="sticky top-0 bg-pink-50 z-10">
-              <tr class="text-gray-600 text-sm">
+            <thead class="sticky top-0 z-10 bg-gradient-to-r from-pink-50 to-pink-100 backdrop-blur-sm">
+              <tr class="text-gray-700 text-sm">
                 <th class="p-4 font-semibold">歌名</th>
                 <th class="p-4 font-semibold">中文名</th>
                 <th class="p-4 font-semibold">原唱</th>
@@ -205,27 +263,41 @@ onBeforeUnmount(() => {
               </tr>
             </thead>
             <tbody class="text-sm">
-              <tr v-for="song in filteredSongs" :key="song.id" class="border-b border-gray-50 hover:bg-pink-50/50 transition-colors">
-                <td class="p-4 font-medium text-gray-800">{{ song.title }}</td>
-                <td class="p-4 text-gray-500">{{ song.chineseName || '-' }}</td>
-                <td class="p-4 text-gray-500">{{ song.artist }}</td>
-                <td class="p-4 text-gray-600 whitespace-nowrap">{{ song.lastSung }}</td>
-                <td class="p-4 text-center font-mono text-gray-600">{{ calculateDaysSince(song.lastSung) }}天</td>
+              <tr 
+                v-for="(song, idx) in filteredSongs" 
+                :key="song.id" 
+                class="border-b border-pink-50/50 hover:bg-gradient-to-r hover:from-pink-50/50 hover:to-pink-100/50 transition-all duration-300 group"
+                :style="{ animationDelay: `${idx * 0.02}s` }"
+              >
+                <td class="p-4 font-medium text-gray-800 group-hover:text-pink-500 transition-colors">{{ song.title }}</td>
+                <td class="p-4 text-gray-600">{{ song.chineseName || '-' }}</td>
+                <td class="p-4 text-gray-600">{{ song.artist }}</td>
+                <td class="p-4 text-gray-700 whitespace-nowrap">{{ song.lastSung }}</td>
+                <td class="p-4 text-center font-mono text-pink-500 font-semibold">{{ calculateDaysSince(song.lastSung) }}天</td>
                 <td class="p-4 text-center whitespace-nowrap" style="min-width: 80px;">
-                  <a :href="song.link" target="_blank" class="text-pink-400 hover:text-pink-600 text-lg inline-block">▶</a>
+                  <a 
+                    :href="song.link" 
+                    target="_blank" 
+                    class="text-pink-400 hover:text-pink-600 text-lg inline-block transition-transform hover:scale-125"
+                  >
+                    ▶
+                  </a>
                 </td>
               </tr>
             </tbody>
           </table>
           <div v-if="!loading && filteredSongs.length === 0" class="p-8 text-center text-gray-500">
-            没有找到相关歌曲... 🎤
+            <div class="flex items-center justify-center gap-2">
+              没有找到相关歌曲...
+              <Icon icon="noto:studio-microphone" class="text-lg" />
+            </div>
           </div>
         </div>
       </div>
 
       <div class="space-y-6">
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h3 class="font-bold text-gray-700 mb-4 text-center">常驻歌手偏好</h3>
+        <div class="chart-card bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-pink-100/50 card-hover">
+          <h3 class="font-bold text-gray-700 mb-4 text-center gradient-text">常驻歌手偏好</h3>
           <div class="chart-container" style="height: 250px; overflow-x: auto; overflow-y: hidden;">
             <div ref="chartCanvas" style="width: 100%; height: 100%; min-width: 100%;"></div>
           </div>
@@ -251,5 +323,11 @@ onBeforeUnmount(() => {
   display: block;
   max-height: 100%;
   height: 100%;
+}
+
+.song-table,
+.chart-card {
+  opacity: 1;
+  transform: translate(0, 0);
 }
 </style>

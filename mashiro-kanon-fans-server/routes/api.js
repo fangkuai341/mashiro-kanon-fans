@@ -80,4 +80,9 @@ router.get('/shop', kanonController.getShop);
 // 图片上传路由
 router.post('/upload/image', upload.single('image'), kanonController.uploadImage);
 
+// 反馈路由
+router.get('/feedbacks', kanonController.getFeedbacks);
+router.post('/feedbacks', kanonController.createFeedback);
+router.delete('/feedbacks/:id', kanonController.deleteFeedback);
+
 module.exports = router;

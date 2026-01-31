@@ -4,7 +4,8 @@ Profile='Profile',
 Music='Music',
 Live='Live',
 Community='Community',
-Shop='Shop'
+Shop='Shop',
+Feedback='Feedback'
 }
 export enum TabName{
 Dashboard='dashboard',
@@ -12,5 +13,6 @@ Profile='profile',
 Music='music',
 Live='live',
 Community='community',
-Shop='shop'
+Shop='shop',
+Feedback='feedback'
 }
