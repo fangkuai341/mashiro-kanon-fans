@@ -13,6 +13,14 @@ const songs = ref<Song[]>([]);
 const loading = ref(false);
 let chartInstance: echarts.ECharts | null = null;
 
+// 音乐播放相关状态
+const audioRef = ref<HTMLAudioElement | null>(null);
+const currentPlayingId = ref<number | null>(null);
+const isPlaying = ref(false);
+const currentTime = ref(0);
+const duration = ref(0);
+const currentSong = ref<Song | null>(null);
+
 // 保存 resize 处理函数引用，用于清理
 const handleResize = () => {
   chartInstance?.resize();
@@ -212,17 +220,127 @@ onMounted(async () => {
   }
 });
 
+// 格式化时间（秒转为 MM:SS）
+const formatTime = (seconds: number): string => {
+  if (isNaN(seconds) || !isFinite(seconds)) return '00:00';
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  const minsStr = mins < 10 ? '0' + mins : String(mins);
+  const secsStr = secs < 10 ? '0' + secs : String(secs);
+  return `${minsStr}:${secsStr}`;
+};
+
+// 播放/暂停音乐
+const togglePlay = (song?: Song) => {
+  if (!audioRef.value) return;
+  
+  // 如果传入了歌曲，则播放该歌曲
+  if (song) {
+    // 如果点击的是当前正在播放的歌曲，则暂停/继续
+    if (currentPlayingId.value === song.id) {
+      if (isPlaying.value) {
+        audioRef.value.pause();
+        isPlaying.value = false;
+      } else {
+        audioRef.value.play();
+        isPlaying.value = true;
+      }
+    } else {
+      // 播放新歌曲
+      currentPlayingId.value = song.id;
+      currentSong.value = song;
+      if (audioRef.value.src !== 'http://localhost:3000' + song.link) {
+        audioRef.value.src = 'http://localhost:3000' + song.link;
+      }
+      audioRef.value.play();
+      isPlaying.value = true;
+    }
+  } else {
+    // 没有传入歌曲，则切换当前播放状态
+    if (isPlaying.value) {
+      audioRef.value.pause();
+      isPlaying.value = false;
+    } else {
+      audioRef.value.play();
+      isPlaying.value = true;
+    }
+  }
+};
+
+// 更新播放进度
+const updateProgress = () => {
+  if (audioRef.value) {
+    currentTime.value = audioRef.value.currentTime;
+    duration.value = audioRef.value.duration || 0;
+  }
+};
+
+// 拖动进度条
+const seekTo = (event: Event) => {
+  if (!audioRef.value) return;
+  const target = event.target as HTMLInputElement;
+  const seekTime = (parseFloat(target.value) / 100) * duration.value;
+  audioRef.value.currentTime = seekTime;
+  currentTime.value = seekTime;
+};
+
+// 计算进度百分比
+const progressPercent = computed(() => {
+  if (duration.value === 0) return 0;
+  return (currentTime.value / duration.value) * 100;
+});
+
+// 监听音频播放结束
+const handleAudioEnded = () => {
+  isPlaying.value = false;
+  currentPlayingId.value = null;
+  currentTime.value = 0;
+  currentSong.value = null;
+};
+
+// 监听音频播放错误
+const handleAudioError = () => {
+  console.error('音频播放失败');
+  isPlaying.value = false;
+  currentPlayingId.value = null;
+  currentTime.value = 0;
+  currentSong.value = null;
+};
+
+// 监听音频加载元数据
+const handleLoadedMetadata = () => {
+  if (audioRef.value) {
+    duration.value = audioRef.value.duration || 0;
+  }
+};
+
 onBeforeUnmount(() => {
   if (chartInstance) {
     chartInstance.dispose();
     chartInstance = null;
   }
   window.removeEventListener('resize', handleResize);
+  // 清理音频资源
+  if (audioRef.value) {
+    audioRef.value.pause();
+    audioRef.value.src = '';
+  }
 });
 </script>
 
 <template>
   <div class="fade-in space-y-6">
+    <!-- 隐藏的音频播放器 -->
+    <audio 
+      ref="audioRef"
+      @ended="handleAudioEnded"
+      @error="handleAudioError"
+      @timeupdate="updateProgress"
+      @loadedmetadata="handleLoadedMetadata"
+      @play="isPlaying = true"
+      @pause="isPlaying = false"
+      preload="none"
+    ></audio>
     <div class="music-header flex flex-col md:flex-row justify-between items-end gap-4 border-b border-pink-100 pb-4">
       <div>
         <h2 class="text-2xl md:text-3xl font-bold mb-2 gradient-text flex items-center gap-2">
@@ -259,7 +377,7 @@ onBeforeUnmount(() => {
                 <th class="p-4 font-semibold">原唱</th>
                 <th class="p-4 font-semibold">最近演唱</th>
                 <th class="p-4 font-semibold text-center">天数</th>
-                <th class="p-4 font-semibold text-center whitespace-nowrap" style="min-width: 80px;">链接</th>
+                <th class="p-4 font-semibold text-center whitespace-nowrap" style="min-width: 80px;">播放</th>
               </tr>
             </thead>
             <tbody class="text-sm">
@@ -275,13 +393,17 @@ onBeforeUnmount(() => {
                 <td class="p-4 text-gray-700 whitespace-nowrap">{{ song.lastSung }}</td>
                 <td class="p-4 text-center font-mono text-pink-500 font-semibold">{{ calculateDaysSince(song.lastSung) }}天</td>
                 <td class="p-4 text-center whitespace-nowrap" style="min-width: 80px;">
-                  <a 
-                    :href="song.link" 
-                    target="_blank" 
-                    class="text-pink-400 hover:text-pink-600 text-lg inline-block transition-transform hover:scale-125"
+                  <button 
+                    @click="togglePlay(song)"
+                    class="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-pink-100 transition-all"
+                    :class="currentPlayingId === song.id && isPlaying ? 'bg-pink-100' : ''"
                   >
-                    ▶
-                  </a>
+                    <Icon 
+                      :icon="currentPlayingId === song.id && isPlaying ? 'mdi:pause' : 'mdi:play'" 
+                      class="text-pink-500 hover:text-pink-600 transition-colors"
+                      style="font-size: 20px;"
+                    />
+                  </button>
                 </td>
               </tr>
             </tbody>
@@ -300,6 +422,43 @@ onBeforeUnmount(() => {
           <h3 class="font-bold text-gray-700 mb-4 text-center gradient-text">常驻歌手偏好</h3>
           <div class="chart-container" style="height: 250px; overflow-x: auto; overflow-y: hidden;">
             <div ref="chartCanvas" style="width: 100%; height: 100%; min-width: 100%;"></div>
+          </div>
+        </div>
+        <!-- 音乐控制器 -->
+        <div 
+          v-if="currentSong" 
+          class="music-controller bg-white/80 backdrop-blur-sm p-4 rounded-2xl shadow-lg border border-pink-100/50 card-hover"
+        >
+          <div class="mb-3">
+            <h4 class="font-semibold text-gray-800 text-sm truncate">{{ currentSong.title }}</h4>
+            <p class="text-xs text-gray-500 truncate">{{ currentSong.artist }}</p>
+          </div>
+          
+          <!-- 进度条 -->
+          <div class="mb-3">
+            <input
+              type="range"
+              :value="progressPercent"
+              @input="seekTo"
+              min="0"
+              max="100"
+              step="0.1"
+              class="w-full h-2 bg-pink-100 rounded-lg appearance-none cursor-pointer slider"
+            />
+          </div>
+          
+          <!-- 时间和控制按钮 -->
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-gray-600 font-mono">{{ formatTime(currentTime) }} / {{ formatTime(duration) }}</span>
+            <button
+              @click="togglePlay()"
+              class="flex items-center justify-center w-10 h-10 rounded-full bg-pink-500 hover:bg-pink-600 text-white transition-all shadow-md hover:shadow-lg"
+            >
+              <Icon 
+                :icon="isPlaying ? 'mdi:pause' : 'mdi:play'" 
+                style="font-size: 20px;"
+              />
+            </button>
           </div>
         </div>
       </div>
@@ -329,5 +488,42 @@ onBeforeUnmount(() => {
 .chart-card {
   opacity: 1;
   transform: translate(0, 0);
+}
+
+/* 进度条样式 */
+.slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ec4899;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s;
+}
+
+.slider::-webkit-slider-thumb:hover {
+  background: #db2777;
+  transform: scale(1.1);
+}
+
+.slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ec4899;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s;
+}
+
+.slider::-moz-range-thumb:hover {
+  background: #db2777;
+  transform: scale(1.1);
+}
+
+.music-controller {
+  min-height: 120px;
 }
 </style>

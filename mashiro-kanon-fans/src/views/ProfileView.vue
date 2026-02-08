@@ -146,8 +146,8 @@ onMounted(async () => {
           <div class="flex justify-between items-center border-b pb-2">
             <span class="text-gray-500">生日</span>
             <span class="flex items-center gap-1">
-              12月24日
-              <Icon icon="noto:christmas-tree" class="text-base" />
+              5月29日
+              <Icon icon="noto:birthday-cake" class="text-base" />
             </span>
           </div>
           <div class="flex justify-between items-center border-b pb-2">
@@ -157,20 +157,23 @@ onMounted(async () => {
           <div class="flex justify-between items-center border-b pb-2">
             <span class="text-gray-500">粉丝名</span>
             <span class="bg-pink-100 text-pink-700 px-2 rounded text-sm"
-              >Mashiromates</span
+              >帕清姬</span
             >
           </div>
           <div class="pt-2">
             <span class="text-gray-500 block mb-1">简介</span>
             <p class="text-sm text-gray-600 leading-relaxed">
-              以治愈系歌声为主的VTuber。梦想是在大大的舞台上为大家歌唱。喜欢甜食，特别是草莓大福。
+              眞白かのん，昵称白菜，人气 Vup，B 站活跃，元气偶像风，2022 年度 Vup 季军。
             </p>
           </div>
         </div>
       </div>
 
-      <div class="md:col-span-2 space-y-6">
-        <div class="timeline-card bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-orange-100/50 card-hover">
+      <div class="md:col-span-2 space-y-6 relative">
+        <div 
+          class="timeline-card bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-orange-100/50 card-hover relative"
+          :class="{ 'z-10': isTimelineExpanded }"
+        >
           <h3 class="font-bold text-lg mb-4 gradient-text flex items-center gap-2">
             <Icon icon="noto:scroll" class="text-lg" />
             经历时间轴
@@ -261,5 +264,19 @@ onMounted(async () => {
 .chart-card {
   opacity: 1;
   transform: translate(0, 0);
+}
+
+.timeline-card {
+  position: relative;
+  z-index: 2;
+}
+
+.timeline-card.z-10 {
+  z-index: 10;
+}
+
+.chart-card {
+  position: relative;
+  z-index: 1;
 }
 </style>

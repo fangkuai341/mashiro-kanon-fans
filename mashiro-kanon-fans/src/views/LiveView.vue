@@ -43,6 +43,10 @@ const scheduleData = reactive<LiveScheduleItem[]>([]);
 // 存储所有日程数据（用于本地过滤）
 const allScheduleData = ref<LiveScheduleItem[]>([]);
 const loading = ref(false);
+// 当前请求的页码
+const currentPage = ref(1);
+// 是否还有更多数据
+const hasMore = ref(true);
 
 // 将 Bilibili 回放数据格式转换为前端需要的格式
 const transformScheduleData = (apiData: BilibiliArchiveItem[]): LiveScheduleItem[] => {
@@ -104,12 +108,16 @@ const transformScheduleData = (apiData: BilibiliArchiveItem[]): LiveScheduleItem
 const fetchAllScheduleData = async () => {
   loading.value = true;
   try {
-    // 获取所有回放数据（ps=3000）
-    const response = await getBilibiliArchivesApi({ ps: 3000, pn: 1 });
+    // 获取所有回放数据（ps=31, pn=1）
+    const response = await getBilibiliArchivesApi({ ps: 31, pn: 1 });
     const archives = (response?.data?.archives ?? response?.archives ?? []) as BilibiliArchiveItem[];
     
     // 转换所有数据并存储
     allScheduleData.value = transformScheduleData(archives);
+    currentPage.value = 1;
+    
+    // 判断是否还有更多数据（如果返回的数据少于31条，说明没有更多了）
+    hasMore.value = archives.length >= 31;
     
     // 初始化当前月份的数据
     filterScheduleDataByMonth(currentMonth.value);
@@ -118,6 +126,39 @@ const fetchAllScheduleData = async () => {
     // 出错时使用空数组
     allScheduleData.value = [];
     scheduleData.length = 0;
+    hasMore.value = false;
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 向后请求更多数据（上一月时调用）
+const fetchMoreScheduleData = async () => {
+  if (loading.value || !hasMore.value) return; // 如果正在加载或没有更多数据，直接返回
+  
+  loading.value = true;
+  try {
+    const nextPage = currentPage.value + 1;
+    const response = await getBilibiliArchivesApi({ ps: 31, pn: nextPage });
+    const archives = (response?.data?.archives ?? response?.archives ?? []) as BilibiliArchiveItem[];
+    
+    if (archives && archives.length > 0) {
+      // 转换新数据并追加到现有数据
+      const newData = transformScheduleData(archives);
+      allScheduleData.value = [...allScheduleData.value, ...newData];
+      currentPage.value = nextPage;
+      
+      // 判断是否还有更多数据（如果返回的数据少于31条，说明没有更多了）
+      hasMore.value = archives.length >= 31;
+      
+      // watch 会自动调用 filterScheduleDataByMonth，所以这里不需要手动调用
+    } else {
+      // 如果没有数据，说明已经到最后一页了
+      hasMore.value = false;
+    }
+  } catch (error) {
+    console.error('获取更多直播日程失败:', error);
+    hasMore.value = false;
   } finally {
     loading.value = false;
   }
@@ -146,7 +187,7 @@ const replayLoading = ref(false);
 const fetchReplays = async () => {
   replayLoading.value = true;
   try {
-    const res = await getBilibiliArchivesApi({ ps: 3000, pn: 1 });
+    const res = await getBilibiliArchivesApi({ ps: 10, pn: 1 });
     const archives = (res?.data?.archives ?? res?.archives ?? []) as BilibiliArchiveItem[];
     replays.value = archives.map((item, idx) => {
       const date = item?.pubdate ? dayjs.unix(item.pubdate).format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD');
@@ -236,9 +277,14 @@ const selectedSchedules = computed<LiveScheduleItem[]>(() => {
 
 const monthLabel = computed(() => currentMonth.value.format('YYYY 年 M 月'));
 
-const handlePrevMonth = () => {
+const handlePrevMonth = async () => {
+  if (loading.value) return; // 如果正在加载，直接返回
+  
+  // 先切换月份
   currentMonth.value = currentMonth.value.subtract(1, 'month');
-  filterScheduleDataByMonth(currentMonth.value);
+  
+  // 向后请求一次接口
+  await fetchMoreScheduleData();
 };
 
 const handleNextMonth = () => {
@@ -353,11 +399,7 @@ onBeforeUnmount(() => {
     <!-- 主体：左侧日历 + 右侧分析 -->
     <div class="flex flex-col lg:flex-row gap-6">
       <!-- 左：日历 -->
-      <div class="calendar-container flex-1 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-pink-100/50 p-6 flex flex-col card-hover">
-        <!-- 加载状态 -->
-        <div v-if="loading" class="flex items-center justify-center py-8 text-gray-500 text-sm">
-          加载中...
-        </div>
+      <div class="calendar-container flex-1 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-pink-100/50 p-6 flex flex-col card-hover relative">
         <!-- 月份控制 -->
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center gap-3">
@@ -368,7 +410,9 @@ onBeforeUnmount(() => {
           </div>
           <div class="flex items-center gap-2">
             <button
-              class="px-2 py-1 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm"
+              class="px-2 py-1 rounded-md border border-gray-200 text-sm transition-all"
+              :class="loading || !hasMore ? 'text-gray-300 cursor-not-allowed bg-gray-50' : 'text-gray-500 hover:bg-gray-50'"
+              :disabled="loading || !hasMore"
               @click="handlePrevMonth"
             >
               ‹ 上一月
@@ -393,7 +437,7 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- 日历格子 -->
-        <div class="grid grid-cols-7 gap-1.5 flex-1">
+        <div class="grid grid-cols-7 gap-1.5 flex-1 relative">
           <button
             v-for="cell in calendarCells"
             :key="cell.date.format('YYYY-MM-DD')"
@@ -437,6 +481,16 @@ onBeforeUnmount(() => {
               </div>
             </div>
           </button>
+          <!-- 加载遮罩 -->
+          <div
+            v-if="loading"
+            class="absolute inset-0 bg-white/80 backdrop-blur-sm rounded-lg flex items-center justify-center z-10"
+          >
+            <div class="flex flex-col items-center gap-2 text-gray-500">
+              <div class="w-6 h-6 border-2 border-pink-400 border-t-transparent rounded-full animate-spin"></div>
+              <span class="text-xs">加载中...</span>
+            </div>
+          </div>
         </div>
 
         <!-- 选中日期详情 -->

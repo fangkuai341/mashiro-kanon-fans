@@ -74,7 +74,7 @@ exports.deleteQuote = async (req, res) => {
 // --- 3. 时间轴 Timeline (CRUD) ---
 exports.getTimeline = async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT * FROM timeline ORDER BY year DESC, date ASC');
+        const [rows] = await pool.query('SELECT * FROM timeline ORDER BY id DESC, date ASC');
         res.json(rows);
     } catch (e) { res.status(500).json({ error: e.message }); }
 };
@@ -253,7 +253,7 @@ exports.getBiliStats =async (req, res) => {
 exports.getBiliSeriesArchives = async (req, res) => {
     const {
         mid = '401480763',
-        current_mid = '293942714',
+        current_mid = '293942715',
         series_id = '210517',
         ps = '3',
         pn = '1',
@@ -262,7 +262,7 @@ exports.getBiliSeriesArchives = async (req, res) => {
     try {
         const response = await axios.get('https://api.bilibili.com/x/series/archives', {
             params: { mid, current_mid, series_id, ps, pn },
-            timeout: 8000,
+            //timeout: 8000,
         });
 
         res.json(response.data);
@@ -290,6 +290,27 @@ exports.uploadImage = async (req, res) => {
         res.json({ 
             success: true,
             url: imageUrl,
+            filename: req.file.filename,
+            originalname: req.file.originalname,
+            size: req.file.size
+        });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+}
+
+// --- 12. 音乐上传 Upload Music ---
+exports.uploadMusic = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: '没有上传文件' });
+        }
+
+        // 返回音乐的访问URL（文件位置）
+        const musicUrl = `/uploads/${req.file.filename}`;
+        res.json({ 
+            success: true,
+            url: musicUrl,
             filename: req.file.filename,
             originalname: req.file.originalname,
             size: req.file.size

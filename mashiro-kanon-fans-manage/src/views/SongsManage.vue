@@ -53,15 +53,34 @@
         <a-form-item label="歌手" required>
           <a-input v-model:value="formState.artist" />
         </a-form-item>
-        <a-form-item label="最后演唱日期" required>
+        <a-form-item label="中文名">
+          <a-input v-model:value="formState.chinese_name" />
+        </a-form-item>
+        <a-form-item label="最后演唱日期">
           <a-date-picker
             v-model:value="formState.last_song"
             style="width: 100%"
             value-format="YYYY-MM-DD"
           />
         </a-form-item>
-        <a-form-item label="链接">
-          <a-input v-model:value="formState.link" placeholder="B站 / 音乐平台链接" />
+        <a-form-item label="音乐文件">
+          <a-upload
+            :before-upload="handleBeforeUpload"
+            :file-list="fileList"
+            :remove="handleRemove"
+            accept="audio/*"
+            :max-count="1"
+          >
+            <a-button>
+              <template #icon><UploadOutlined /></template>
+              选择音乐文件
+            </a-button>
+            <template #tip>
+              <div class="ant-upload-tip">
+                支持 mp3, wav, flac, aac, ogg, m4a 格式，最大 50MB
+              </div>
+            </template>
+          </a-upload>
         </a-form-item>
       </a-form>
     </a-modal>
@@ -73,11 +92,14 @@ import { onMounted, reactive, ref } from 'vue'
 import type { Dayjs } from 'dayjs'
 import axios from 'axios'
 import dayjs from 'dayjs'
+import { UploadOutlined } from '@ant-design/icons-vue'
+import type { UploadFile, UploadProps } from 'ant-design-vue'
 
 interface SongItem {
   id?: number
   title: string
   artist: string
+  chinese_name?: string
   last_song: string
   link?: string
 }
@@ -86,6 +108,7 @@ interface SongForm {
   id?: number
   title: string
   artist: string
+  chinese_name?: string
   last_song: string | Dayjs | null
   link?: string
 }
@@ -103,14 +126,18 @@ const formState = reactive<SongForm>({
   id: undefined,
   title: '',
   artist: '',
+  chinese_name: '',
   last_song: null,
   link: '',
 })
+
+const fileList = ref<UploadFile[]>([])
 
 const columns = [
   { title: 'ID', dataIndex: 'id', key: 'id', width: 60 },
   { title: '标题', dataIndex: 'title', key: 'title', width: 160 },
   { title: '歌手', dataIndex: 'artist', key: 'artist', width: 160 },
+  { title: '中文名', dataIndex: 'chinese_name', key: 'chinese_name', width: 160 },
   { title: '最后演唱日期', dataIndex: 'last_song', key: 'last_song', width: 140 },
   { title: '链接', dataIndex: 'link', key: 'link', width: 160 },
   { title: '操作', key: 'actions', width: 140, fixed: 'right' as const },
@@ -120,8 +147,43 @@ const resetForm = () => {
   formState.id = undefined
   formState.title = ''
   formState.artist = ''
+  formState.chinese_name = ''
   formState.last_song = null
   formState.link = ''
+  fileList.value = []
+}
+
+const handleBeforeUpload: UploadProps['beforeUpload'] = async (file) => {
+  const formData = new FormData()
+  formData.append('music', file)
+  
+  try {
+    const res = await axios.post(`${baseURL}/upload/music`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+    
+    if (res.data.success && res.data.url) {
+      formState.link = res.data.url
+      fileList.value = [{
+        uid: '-1',
+        name: file.name,
+        status: 'done',
+        url: res.data.url
+      }]
+    }
+  } catch (error: any) {
+    console.error('上传失败:', error)
+    return false
+  }
+  
+  return false // 阻止自动上传
+}
+
+const handleRemove = () => {
+  formState.link = ''
+  fileList.value = []
 }
 
 const fetchData = async () => {
@@ -147,8 +209,23 @@ const openEdit = (record: SongItem) => {
   formState.id = record.id
   formState.title = record.title
   formState.artist = record.artist
+  formState.chinese_name = record.chinese_name
   formState.last_song = record.last_song
   formState.link = record.link
+  
+  // 如果已有链接，显示在文件列表中
+  if (record.link) {
+    const fileName = record.link.split('/').pop() || '已上传的音乐文件'
+    fileList.value = [{
+      uid: '-1',
+      name: fileName,
+      status: 'done',
+      url: record.link
+    }]
+  } else {
+    fileList.value = []
+  }
+  
   modalOpen.value = true
 }
 
@@ -158,6 +235,7 @@ const handleSubmit = async () => {
   const payload: SongItem = {
     title: formState.title,
     artist: formState.artist,
+    chinese_name: formState.chinese_name,
     last_song:dayjs(formState.last_song).format('YYYY-MM-DD'),
     link: formState.link,
   }
