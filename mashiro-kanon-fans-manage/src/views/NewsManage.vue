@@ -57,15 +57,14 @@
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
-import dayjs from 'dayjs'
-import axios from 'axios'
-
-interface NewsItem {
-  id?: number
-  cat: string
-  date: string
-  text: string
-}
+import dayjs, { Dayjs } from 'dayjs'
+import {
+  type NewsItem,
+  getNews,
+  createNews,
+  updateNews,
+  deleteNews,
+} from '../api/news'
 
 interface NewsForm {
   id?: number
@@ -73,8 +72,6 @@ interface NewsForm {
   date: string | Dayjs | null
   text: string
 }
-
-const baseURL = 'http://localhost:3000/api'
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -107,8 +104,7 @@ const resetForm = () => {
 const fetchData = async () => {
   loading.value = true
   try {
-    const res = await axios.get<NewsItem[]>(`${baseURL}/news`)
-    list.value = res.data
+    list.value = await getNews()
   } finally {
     loading.value = false
   }
@@ -133,7 +129,7 @@ const handleSubmit = async () => {
   if (!formState.cat || !formState.date || !formState.text) return
   submitLoading.value = true
 
-  const payload: NewsItem = {
+  const payload = {
     cat: formState.cat,
     date: dayjs(formState.date).format('YYYY-MM-DD'),
     text: formState.text,
@@ -141,9 +137,9 @@ const handleSubmit = async () => {
 
   try {
     if (editing.value && formState.id) {
-      await axios.put(`${baseURL}/news/${formState.id}`, payload)
+      await updateNews(formState.id, payload)
     } else {
-      await axios.post(`${baseURL}/news`, payload)
+      await createNews(payload)
     }
     modalOpen.value = false
     await fetchData()
@@ -156,7 +152,7 @@ const handleDelete = async (id?: number) => {
   if (!id) return
   loading.value = true
   try {
-    await axios.delete(`${baseURL}/news/${id}`)
+    await deleteNews(id)
     await fetchData()
   } finally {
     loading.value = false

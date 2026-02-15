@@ -66,16 +66,14 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
 import type { Dayjs } from 'dayjs'
-import axios from 'axios'
 import dayjs from 'dayjs'
-
-interface TimelineItem {
-  id?: number
-  year: number
-  date: string
-  text: string
-  remark?: string
-}
+import {
+  type TimelineItem,
+  getTimeline,
+  createTimeline,
+  updateTimeline,
+  deleteTimeline,
+} from '../api/timeline'
 
 interface TimelineForm {
   id?: number
@@ -84,8 +82,6 @@ interface TimelineForm {
   text: string
   remark?: string
 }
-
-const baseURL = 'http://localhost:3000/api'
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -121,8 +117,7 @@ const resetForm = () => {
 const fetchData = async () => {
   loading.value = true
   try {
-    const res = await axios.get<TimelineItem[]>(`${baseURL}/timeline`)
-    list.value = res.data
+    list.value = await getTimeline()
   } finally {
     loading.value = false
   }
@@ -148,7 +143,7 @@ const handleSubmit = async () => {
   if (!formState.year || !formState.date || !formState.text) return
   submitLoading.value = true
 
-  const payload: TimelineItem = {
+  const payload = {
     year: formState.year,
     date: dayjs(formState.date).format('YYYY-MM-DD'),
     text: formState.text,
@@ -157,9 +152,9 @@ const handleSubmit = async () => {
 
   try {
     if (editing.value && formState.id) {
-      await axios.put(`${baseURL}/timeline/${formState.id}`, payload)
+      await updateTimeline(formState.id, payload)
     } else {
-      await axios.post(`${baseURL}/timeline`, payload)
+      await createTimeline(payload)
     }
     modalOpen.value = false
     await fetchData()
@@ -172,7 +167,7 @@ const handleDelete = async (id?: number) => {
   if (!id) return
   loading.value = true
   try {
-    await axios.delete(`${baseURL}/timeline/${id}`)
+    await deleteTimeline(id)
     await fetchData()
   } finally {
     loading.value = false

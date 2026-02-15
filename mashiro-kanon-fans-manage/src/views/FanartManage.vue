@@ -78,20 +78,16 @@
 
 <script setup lang="ts">
 import { reactive, ref, onMounted } from 'vue'
-import axios from 'axios'
 import type { UploadChangeParam, UploadFile } from 'ant-design-vue'
 import { PlusOutlined } from '@ant-design/icons-vue'
-
-interface FanartItem {
-  id?: number
-  author?: string
-  title?: string
-  img_url: string
-  source_link?: string
-}
-
-const baseURL = 'http://localhost:3000'
-const apiBase = `${baseURL}/api`
+import {
+  type FanartItem,
+  getFanarts,
+  createFanart,
+  deleteFanart,
+  getUploadUrl,
+  getImageFullUrl,
+} from '../api/fanart'
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -115,14 +111,9 @@ const columns = [
   { title: '操作', key: 'actions', width: 120, fixed: 'right' as const },
 ]
 
-const uploadUrl = `${apiBase}/upload/image`
+const uploadUrl = getUploadUrl()
 
-const imageFullUrl = (imgUrl: string) => {
-  if (!imgUrl) return ''
-  // 后端 uploadImage 返回 /uploads/xxx，相对 server 根目录
-  if (imgUrl.startsWith('http')) return imgUrl
-  return `${baseURL}${imgUrl}`
-}
+const imageFullUrl = getImageFullUrl
 
 const resetForm = () => {
   formState.author = ''
@@ -134,8 +125,7 @@ const resetForm = () => {
 const fetchData = async () => {
   loading.value = true
   try {
-    const res = await axios.get<FanartItem[]>(`${apiBase}/fanarts`)
-    list.value = res.data
+    list.value = await getFanarts()
   } finally {
     loading.value = false
   }
@@ -167,7 +157,7 @@ const handleSubmit = async () => {
   if (!formState.img_url) return
   submitLoading.value = true
   try {
-    await axios.post(`${apiBase}/fanarts`, {
+    await createFanart({
       author: formState.author,
       title: formState.title,
       img_url: formState.img_url,
@@ -184,7 +174,7 @@ const handleDelete = async (id?: number) => {
   if (!id) return
   loading.value = true
   try {
-    await axios.delete(`${apiBase}/fanarts/${id}`)
+    await deleteFanart(id)
     await fetchData()
   } finally {
     loading.value = false

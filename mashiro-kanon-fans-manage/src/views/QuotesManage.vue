@@ -46,14 +46,13 @@
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
-import axios from 'axios'
-
-interface QuoteItem {
-  id?: number
-  text: string
-}
-
-const baseURL = 'http://localhost:3000/api'
+import {
+  type QuoteItem,
+  getQuotes,
+  createQuote,
+  updateQuote,
+  deleteQuote,
+} from '../api/quotes'
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -80,9 +79,7 @@ const resetForm = () => {
 const fetchData = async () => {
   loading.value = true
   try {
-    // 后端当前接口返回随机 1 条，为了管理方便这里假设你会调整后端为“全部语录列表”
-    const res = await axios.get<QuoteItem[]>(`${baseURL}/allQuotes`)
-    list.value = res.data
+    list.value = await getQuotes()
   } finally {
     loading.value = false
   }
@@ -107,9 +104,9 @@ const handleSubmit = async () => {
   const payload = { text: formState.text }
   try {
     if (editing.value && formState.id) {
-      await axios.put(`${baseURL}/quotes/${formState.id}`, payload)
+      await updateQuote(formState.id, payload)
     } else {
-      await axios.post(`${baseURL}/quotes`, payload)
+      await createQuote(payload)
     }
     modalOpen.value = false
     await fetchData()
@@ -122,7 +119,7 @@ const handleDelete = async (id?: number) => {
   if (!id) return
   loading.value = true
   try {
-    await axios.delete(`${baseURL}/quotes/${id}`)
+    await deleteQuote(id)
     await fetchData()
   } finally {
     loading.value = false

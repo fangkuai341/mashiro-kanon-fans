@@ -90,19 +90,17 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
 import type { Dayjs } from 'dayjs'
-import axios from 'axios'
 import dayjs from 'dayjs'
 import { UploadOutlined } from '@ant-design/icons-vue'
 import type { UploadFile, UploadProps } from 'ant-design-vue'
-
-interface SongItem {
-  id?: number
-  title: string
-  artist: string
-  chinese_name?: string
-  last_song: string
-  link?: string
-}
+import {
+  type SongItem,
+  getSongs,
+  createSong,
+  updateSong,
+  deleteSong,
+  uploadMusic,
+} from '../api/songs'
 
 interface SongForm {
   id?: number
@@ -112,8 +110,6 @@ interface SongForm {
   last_song: string | Dayjs | null
   link?: string
 }
-
-const baseURL = 'http://localhost:3000/api'
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -154,23 +150,16 @@ const resetForm = () => {
 }
 
 const handleBeforeUpload: UploadProps['beforeUpload'] = async (file) => {
-  const formData = new FormData()
-  formData.append('music', file)
-  
   try {
-    const res = await axios.post(`${baseURL}/upload/music`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    })
+    const res = await uploadMusic(file)
     
-    if (res.data.success && res.data.url) {
-      formState.link = res.data.url
+    if (res.success && res.url) {
+      formState.link = res.url
       fileList.value = [{
         uid: '-1',
         name: file.name,
         status: 'done',
-        url: res.data.url
+        url: res.url
       }]
     }
   } catch (error: any) {
@@ -189,10 +178,7 @@ const handleRemove = () => {
 const fetchData = async () => {
   loading.value = true
   try {
-    const res = await axios.get<SongItem[]>(`${baseURL}/songs`, {
-      params: keyword.value ? { q: keyword.value } : undefined,
-    })
-    list.value = res.data
+    list.value = await getSongs(keyword.value || undefined)
   } finally {
     loading.value = false
   }
@@ -232,19 +218,19 @@ const openEdit = (record: SongItem) => {
 const handleSubmit = async () => {
   if (!formState.title || !formState.artist || !formState.last_song) return
   submitLoading.value = true
-  const payload: SongItem = {
+  const payload = {
     title: formState.title,
     artist: formState.artist,
     chinese_name: formState.chinese_name,
-    last_song:dayjs(formState.last_song).format('YYYY-MM-DD'),
+    last_song: dayjs(formState.last_song).format('YYYY-MM-DD'),
     link: formState.link,
   }
 
   try {
     if (editing.value && formState.id) {
-      await axios.put(`${baseURL}/songs/${formState.id}`, payload)
+      await updateSong(formState.id, payload)
     } else {
-      await axios.post(`${baseURL}/songs`, payload)
+      await createSong(payload)
     }
     modalOpen.value = false
     await fetchData()
@@ -257,7 +243,7 @@ const handleDelete = async (id?: number) => {
   if (!id) return
   loading.value = true
   try {
-    await axios.delete(`${baseURL}/songs/${id}`)
+    await deleteSong(id)
     await fetchData()
   } finally {
     loading.value = false
