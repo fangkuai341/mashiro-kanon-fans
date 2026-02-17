@@ -158,23 +158,7 @@ const handleFileChange = async (event: Event) => {
     <div>
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-xl font-bold gradient-text border-l-4 border-pink-400 pl-3">精选同人绘</h3>
-            <label class="upload-btn relative inline-flex items-center px-4 py-2 text-white rounded-lg cursor-pointer transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
-                <input 
-                    type="file" 
-                    accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                    @change="handleFileChange" 
-                    class="hidden"
-                    :disabled="uploading"
-                />
-                <span v-if="!uploading" class="flex items-center gap-2">
-                  <Icon icon="noto:outbox-tray" class="text-lg" />
-                  上传图片
-                </span>
-                <span v-else class="flex items-center gap-2">
-                    <Icon icon="noto:hourglass-not-done" class="animate-spin text-lg" />
-                    上传中...
-                </span>
-            </label>
+          
         </div>
         
         <!-- 上传的图片展示 -->
