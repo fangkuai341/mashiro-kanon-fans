@@ -8,6 +8,6 @@ export default defineConfig({
     devSourcemap: true, // Make sure this is explicitly set to true or false
   },
   server: {
-    port: 8888,
+    port: 8882,
   },
 })

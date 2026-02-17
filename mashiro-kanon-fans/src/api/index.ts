@@ -1,4 +1,4 @@
-import { ArtistPreferenceItem, BilibiliStatsItem, CreateFeedbackRequest, FeedbackItem, NewsItem, QuotesItem, ScheduleApiItem, ShopItem, SongApiItem, TimelineItem } from '../type'
+import { ArtistPreferenceItem, BilibiliStatsItem, CreateFeedbackRequest, FeedbackItem, NewsItem, QuotesItem, ShopItem, SongApiItem, TimelineItem } from '../type'
 import httpService from './request'
 
 export function getNewApi(): Promise<NewsItem[]>{

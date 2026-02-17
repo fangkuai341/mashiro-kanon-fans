@@ -1,6 +1,4 @@
 {
-  "extends": "@vue/tsconfig/tsconfig.dom.json",
-
   "compilerOptions": {
     "noImplicitAny": false,
     "noEmitOnError": false,
@@ -27,8 +25,7 @@
     "noEmit": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noFallthroughCasesInSwitch": true
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue"]
 }
