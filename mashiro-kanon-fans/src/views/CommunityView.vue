@@ -2,10 +2,10 @@
 import { ref, onMounted, nextTick } from 'vue';
 import { gsap } from 'gsap';
 import { Icon } from '@iconify/vue';
-import { message } from 'ant-design-vue';
+
 import MiniGame from '../components/MiniGame.vue';
 import PuzzleGame from '../components/PuzzleGame.vue';
-import { uploadImageApi } from '../api';
+// import { uploadImageApi } from '../api';
 
 onMounted(async () => {
   // 等待DOM渲染完成
@@ -49,58 +49,58 @@ onMounted(async () => {
 });
 
 // 上传状态
-const uploading = ref(false);
+//const uploading = ref(false);
 const uploadedImages = ref<Array<{ url: string; originalname: string }>>([]);
 
 // 处理文件选择
-const handleFileChange = async (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  const file = target.files?.[0];
+// const handleFileChange = async (event: Event) => {
+//   const target = event.target as HTMLInputElement;
+//   const file = target.files?.[0];
   
-  if (!file) {
-    return;
-  }
+//   if (!file) {
+//     return;
+//   }
 
-  // 验证文件类型
-  const allowedTypes: string[] = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-  if (allowedTypes.indexOf(file.type) === -1) {
-    message.error('只支持上传图片文件 (jpeg, jpg, png, gif, webp)');
-    target.value = '';
-    return;
-  }
+//   // 验证文件类型
+//   const allowedTypes: string[] = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+//   if (allowedTypes.indexOf(file.type) === -1) {
+//     message.error('只支持上传图片文件 (jpeg, jpg, png, gif, webp)');
+//     target.value = '';
+//     return;
+//   }
 
-  // 验证文件大小 (5MB)
-  const maxSize = 5 * 1024 * 1024;
-  if (file.size > maxSize) {
-    message.error('图片大小不能超过 5MB');
-    target.value = '';
-    return;
-  }
+//   // 验证文件大小 (5MB)
+//   const maxSize = 5 * 1024 * 1024;
+//   if (file.size > maxSize) {
+//     message.error('图片大小不能超过 5MB');
+//     target.value = '';
+//     return;
+//   }
 
-  // 开始上传
-  uploading.value = true;
-  try {
-    const response = await uploadImageApi(file);
-    if (response.success) {
-      // 构建完整的图片URL
-      const fullUrl = `http://localhost:3000${response.url}`;
-      uploadedImages.value.unshift({
-        url: fullUrl,
-        originalname: response.originalname
-      });
-      message.success('图片上传成功！');
-    } else {
-      message.error('上传失败，请重试');
-    }
-  } catch (error: any) {
-    console.error('上传错误:', error);
-    const errorMsg = error?.response?.data?.error || error?.message || '上传失败，请重试';
-    message.error(errorMsg);
-  } finally {
-    uploading.value = false;
-    target.value = ''; // 清空文件选择，允许重复选择同一文件
-  }
-};
+//   // 开始上传
+//   uploading.value = true;
+//   try {
+//     const response = await uploadImageApi(file);
+//     if (response.success) {
+//       // 构建完整的图片URL
+//       const fullUrl = `http://localhost:3000${response.url}`;
+//       uploadedImages.value.unshift({
+//         url: fullUrl,
+//         originalname: response.originalname
+//       });
+//       message.success('图片上传成功！');
+//     } else {
+//       message.error('上传失败，请重试');
+//     }
+//   } catch (error: any) {
+//     console.error('上传错误:', error);
+//     const errorMsg = error?.response?.data?.error || error?.message || '上传失败，请重试';
+//     message.error(errorMsg);
+//   } finally {
+//     uploading.value = false;
+//     target.value = ''; // 清空文件选择，允许重复选择同一文件
+//   }
+// };
 </script>
 
 <template>
