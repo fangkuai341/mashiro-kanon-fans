@@ -237,11 +237,13 @@ export default {
     }
 
     async function generateSeriesData() {
-      const res=await getBilibiliStatsApi()
-      const seriesData= res.map((item)=>{
-        return [new Date(item.record_time).getTime(), item.follower]
-      })
-console.log(seriesData);
+      const res = await getBilibiliStatsApi();
+      // 转换为 [时间戳, 粉丝数]，并按时间升序排序，避免折线“来回连线”
+      const seriesData = res
+        .map((item) => {
+          return [new Date(item.record_time).getTime(), item.follower];
+        })
+        .sort((a, b) => (a[0] as number) - (b[0] as number));
 
       return seriesData;
     }
