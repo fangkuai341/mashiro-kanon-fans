@@ -249,8 +249,8 @@ const togglePlay = (song?: Song) => {
       // 播放新歌曲
       currentPlayingId.value = song.id;
       currentSong.value = song;
-      if (audioRef.value.src !== 'http://localhost:3000' + song.link) {
-        audioRef.value.src = 'http://localhost:3000' + song.link;
+      if (audioRef.value.src !== 'http://124.222.238.165:3000' + song.link) {
+        audioRef.value.src = 'http://124.222.238.165:3000' + song.link;
       }
       audioRef.value.play();
       isPlaying.value = true;
