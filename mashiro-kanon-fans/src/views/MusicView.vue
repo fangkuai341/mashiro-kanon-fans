@@ -20,6 +20,9 @@ const isPlaying = ref(false);
 const currentTime = ref(0);
 const duration = ref(0);
 const currentSong = ref<Song | null>(null);
+const bufferedPercent = ref(0);
+const isBuffering = ref(false);
+const isAutoPlayPending = ref(false);
 
 // 保存 resize 处理函数引用，用于清理
 const handleResize = () => {
@@ -252,8 +255,11 @@ const togglePlay = (song?: Song) => {
       if (audioRef.value.src !== 'http://124.222.238.165:3000' + song.link) {
         audioRef.value.src = 'http://124.222.238.165:3000' + song.link;
       }
-      audioRef.value.play();
-      isPlaying.value = true;
+      // 新歌曲先缓冲，缓冲完成后自动播放
+      isAutoPlayPending.value = true;
+      isBuffering.value = true;
+      audioRef.value.load();
+      isPlaying.value = false;
     }
   } else {
     // 没有传入歌曲，则切换当前播放状态
@@ -272,6 +278,16 @@ const updateProgress = () => {
   if (audioRef.value) {
     currentTime.value = audioRef.value.currentTime;
     duration.value = audioRef.value.duration || 0;
+  }
+};
+
+// 更新缓冲进度
+const updateBuffered = () => {
+  if (!audioRef.value || !duration.value) return;
+  const buffered = audioRef.value.buffered;
+  if (buffered.length > 0) {
+    const end = buffered.end(buffered.length - 1);
+    bufferedPercent.value = Math.min(100, (end / duration.value) * 100);
   }
 };
 
@@ -311,6 +327,17 @@ const handleAudioError = () => {
 const handleLoadedMetadata = () => {
   if (audioRef.value) {
     duration.value = audioRef.value.duration || 0;
+    bufferedPercent.value = 0;
+  }
+};
+
+// 缓冲完成，准备可以播放
+const handleCanPlay = () => {
+  isBuffering.value = false;
+  if (isAutoPlayPending.value && audioRef.value) {
+    audioRef.value.play();
+    isPlaying.value = true;
+    isAutoPlayPending.value = false;
   }
 };
 
@@ -337,6 +364,11 @@ onBeforeUnmount(() => {
       @error="handleAudioError"
       @timeupdate="updateProgress"
       @loadedmetadata="handleLoadedMetadata"
+      @progress="updateBuffered"
+      @waiting="isBuffering = true"
+      @canplay="handleCanPlay"
+      @canplaythrough="handleCanPlay"
+      @playing="isBuffering = false"
       @play="isPlaying = true"
       @pause="isPlaying = false"
       preload="none"
@@ -435,21 +467,39 @@ onBeforeUnmount(() => {
           </div>
           
           <!-- 进度条 -->
-          <div class="mb-3">
-            <input
-              type="range"
-              :value="progressPercent"
-              @input="seekTo"
-              min="0"
-              max="100"
-              step="0.1"
-              class="w-full h-2 bg-pink-100 rounded-lg appearance-none cursor-pointer slider"
-            />
+          <div class="mb-2">
+            <div class="relative h-4 flex items-center">
+              <!-- 缓冲条背景 -->
+              <div class="absolute inset-x-0 h-2 rounded-lg bg-pink-100 overflow-hidden">
+                <div
+                  class="h-full bg-pink-200 transition-all duration-200"
+                  :style="{ width: bufferedPercent + '%' }"
+                ></div>
+              </div>
+              <!-- 可拖动进度条 -->
+              <input
+                type="range"
+                :value="progressPercent"
+                @input="seekTo"
+                min="0"
+                max="100"
+                step="0.1"
+                class="relative w-full h-2 bg-transparent rounded-lg appearance-none cursor-pointer slider"
+              />
+            </div>
           </div>
           
-          <!-- 时间和控制按钮 -->
+          <!-- 时间、缓冲状态和控制按钮 -->
           <div class="flex items-center justify-between">
-            <span class="text-xs text-gray-600 font-mono">{{ formatTime(currentTime) }} / {{ formatTime(duration) }}</span>
+            <div class="flex flex-col gap-1">
+              <span class="text-xs text-gray-600 font-mono">
+                {{ formatTime(currentTime) }} / {{ formatTime(duration) }}
+              </span>
+              <div v-if="isBuffering" class="flex items-center gap-1 text-[10px] text-pink-500">
+                <span class="w-3 h-3 border-2 border-pink-400 border-t-transparent rounded-full animate-spin"></span>
+                <span>缓冲中...</span>
+              </div>
+            </div>
             <button
               @click="togglePlay()"
               class="flex items-center justify-center w-10 h-10 rounded-full bg-pink-500 hover:bg-pink-600 text-white transition-all shadow-md hover:shadow-lg"

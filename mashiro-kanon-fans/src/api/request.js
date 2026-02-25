@@ -6,7 +6,7 @@ class HttpService {
   constructor() {
     this.http = axios.create({
       timeout: 80000,
-      baseURL:'http://localhost:3000'
+      baseURL:'http://124.222.238.165:3000'
     })
 
     // axiosRetry(this.http, {
